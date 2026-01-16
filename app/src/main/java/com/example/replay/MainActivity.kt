@@ -100,10 +100,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun getSampleAlbums(): List<Album> {
         return listOf(
-            Album("1", "Trending Album 1", "Artist A", "https://picsum.photos/300"),
-            Album("2", "Trending Album 2", "Artist B", "https://picsum.photos/301"),
-            Album("3", "Trending Album 3", "Artist C", "https://picsum.photos/302"),
-            Album("4", "Trending Album 4", "Artist D", "https://picsum.photos/303")
+            Album("Trending Album 1", "Artist A", "https://picsum.photos/300"),
+            Album("Trending Album 2", "Artist B", "https://picsum.photos/301"),
+            Album("Trending Album 3", "Artist C", "https://picsum.photos/302"),
+            Album("Trending Album 4", "Artist D", "https://picsum.photos/303")
         )
     }
 }
