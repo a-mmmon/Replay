@@ -1,4 +1,4 @@
-package com.example.replay 
+package com.example.replay
 
 import android.view.LayoutInflater
 import android.view.View
