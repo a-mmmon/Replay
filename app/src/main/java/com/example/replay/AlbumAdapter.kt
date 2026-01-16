@@ -8,42 +8,46 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
-class ArtistAdapter(
-    private var artists: List<Artist>
-) : RecyclerView.Adapter<ArtistAdapter.ArtistViewHolder>() {
+// RecyclerView Adapter for displaying album list
+class AlbumAdapter(
+    private var albums: List<Album>
+) : RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
 
-    inner class ArtistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imgArtist: ImageView = itemView.findViewById(R.id.imgArtist)
-        val tvArtistName: TextView = itemView.findViewById(R.id.tvArtistName)
+    // ViewHolder holds album item views
+    inner class AlbumViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-        fun bind(artist: Artist) {
-            tvArtistName.text = artist.name
+        val albumImage: ImageView = itemView.findViewById(R.id.albumImage)
+        val albumName: TextView = itemView.findViewById(R.id.albumName)
+        val artistName: TextView = itemView.findViewById(R.id.artistName)
 
+        // Bind album data to views
+        fun bind(album: Album) {
+            albumName.text = album.name
+            artistName.text = album.artistName
+
+            // Load album image using Glide
             Glide.with(itemView.context)
-                .load(artist.imageUrl)
-                .placeholder(R.drawable.ic_artist_placeholder)
-                .into(imgArtist)
-
-            itemView.setOnClickListener {
-                // Handle artist click
-            }
+                .load(album.imageUrl)
+                .placeholder(R.drawable.ic_album_placeholder)
+                .into(albumImage)
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArtistViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_artist, parent, false)
-        return ArtistViewHolder(view)
+            .inflate(R.layout.item_album, parent, false)
+        return AlbumViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ArtistViewHolder, position: Int) {
-        holder.bind(artists[position])
+    override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
+        holder.bind(albums[position])
     }
 
-    override fun getItemCount(): Int = artists.size
+    override fun getItemCount(): Int = albums.size
 
-    fun updateData(newArtists: List<Artist>) {
-        artists = newArtists
+    // Update album list and refresh RecyclerView
+    fun updateData(newAlbums: List<Album>) {
+        albums = newAlbums
         notifyDataSetChanged()
     }
 }

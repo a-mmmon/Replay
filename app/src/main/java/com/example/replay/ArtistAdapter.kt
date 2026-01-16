@@ -13,20 +13,15 @@ class ArtistAdapter(
 ) : RecyclerView.Adapter<ArtistAdapter.ArtistViewHolder>() {
 
     inner class ArtistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imgArtist: ImageView = itemView.findViewById(R.id.imgArtist)
-        val tvArtistName: TextView = itemView.findViewById(R.id.tvArtistName)
+        val artistImage: ImageView = itemView.findViewById(R.id.artistImage)
+        val artistName: TextView = itemView.findViewById(R.id.artistName)
 
         fun bind(artist: Artist) {
-            tvArtistName.text = artist.name
+            artistName.text = artist.name
 
             Glide.with(itemView.context)
                 .load(artist.imageUrl)
-                .placeholder(R.drawable.ic_artist_placeholder)
-                .into(imgArtist)
-
-            itemView.setOnClickListener {
-                // Handle artist click
-            }
+                .into(artistImage)
         }
     }
 
