@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
 class ArtistAdapter(
-    private var artists: List<Artist>
+    private val artists: List<Artist>
 ) : RecyclerView.Adapter<ArtistAdapter.ArtistViewHolder>() {
 
     inner class ArtistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -36,9 +36,4 @@ class ArtistAdapter(
     }
 
     override fun getItemCount(): Int = artists.size
-
-    fun updateData(newArtists: List<Artist>) {
-        artists = newArtists
-        notifyDataSetChanged()
-    }
 }
