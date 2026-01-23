@@ -25,11 +25,24 @@ class DiscoverActivity : AppCompatActivity() {
         rvDiscover = findViewById(R.id.rvDiscover)
         rvDiscover.layoutManager = LinearLayoutManager(this)
 
+        // In DiscoverActivity.kt, inside the onCreate method
+
+        // In DiscoverActivity.kt, inside the onCreate method
+
+        // In DiscoverActivity.kt, inside the onCreate method
+
         discoverAdapter = DiscoverAdapter(
-            musicList,
-            albumList,
-            artistList
+            songs = musicList,   // Pass the musicList here
+            albums = albumList,
+            artists = artistList,
         )
+
+        rvDiscover.adapter = discoverAdapter
+
+        loadDiscoverData()
+
+
+
 
         rvDiscover.adapter = discoverAdapter
 

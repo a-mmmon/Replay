@@ -39,33 +39,42 @@ class MainActivity : AppCompatActivity() {
         feedRecyclerView = findViewById(R.id.feedRecyclerView)
     }
 
+    // In MainActivity.kt
+
     private fun setupBottomNavigation() {
-        bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    // Already in MainActivity
-                    true
-                }
-                R.id.nav_discover -> {
-                    startActivity(Intent(this, DiscoverActivity::class.java))
-                    true
-                }
-                R.id.nav_post -> {
-                    // Handle post action
-                    true
-                }
-                R.id.nav_library -> {
-                    startActivity(Intent(this, LibraryActivity::class.java))
-                    true
-                }
-                R.id.nav_profile -> {
-                    // Handle profile navigation
-                    true
-                }
-                else -> false
+        bottomNavigation.setOnItemSelectedListener { item ->when (item.itemId) {
+            R.id.nav_home -> {
+                // Already in MainActivity
+                true
             }
+            R.id.nav_discover -> {
+                startActivity(Intent(this, DiscoverActivity::class.java))
+                true
+            }
+            R.id.nav_post -> {
+                // --- FIX: Show the CreatePostBottomSheet ---
+                val bottomSheet = CreatePostBottomSheet()
+                bottomSheet.onPostCreatedListener = { newPost ->
+                    // Optional: Handle the new post if needed,
+                    // e.g., add to a list and refresh a RecyclerView
+                }
+                bottomSheet.show(supportFragmentManager, "CreatePostBottomSheet")
+                true // Return true to indicate the item was handled
+            }
+            R.id.nav_library -> {
+                startActivity(Intent(this, LibraryActivity::class.java))
+                true
+            }
+            R.id.nav_profile -> {
+                // Handle profile navigation
+                true
+            }
+            else -> false
         }
+
     }
+
+}
 
     private fun setupChips() {
         chipAll.setOnClickListener {

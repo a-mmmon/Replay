@@ -4,54 +4,49 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.replay.databinding.ActivityFeedBinding // 1. Import the binding class
 
 class FeedActivity : AppCompatActivity() {
 
-    private lateinit var rvFeed: RecyclerView
-    private lateinit var feedAdapter: FeedAdapter
-    private lateinit var fabCreatePost: FloatingActionButton
-    private lateinit var bottomNav: BottomNavigationView
+    // 2. Declare a binding variable
+    private lateinit var binding: ActivityFeedBinding
 
+    private lateinit var feedAdapter: FeedAdapter
     private val postList = mutableListOf<Post>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_feed)
 
-        rvFeed = findViewById(R.id.rvFeed)
-        fabCreatePost = findViewById(R.id.fabCreatePost)
-        bottomNav = findViewById(R.id.bottomNav)
+        // 3. Inflate the layout and set the content view
+        binding = ActivityFeedBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
+        // 4. Access views through the binding object
         feedAdapter = FeedAdapter(postList) {
-
+            // Handle post click
         }
 
-        rvFeed.layoutManager = LinearLayoutManager(this)
-        rvFeed.adapter = feedAdapter
+        binding.rvFeed.layoutManager = LinearLayoutManager(this)
+        binding.rvFeed.adapter = feedAdapter
 
         loadPosts()
 
-        fabCreatePost.setOnClickListener {
+        binding.fabCreatePost.setOnClickListener {
             CreatePostBottomSheet().show(
                 supportFragmentManager,
                 "CreatePost"
             )
         }
 
-        bottomNav.selectedItemId = R.id.nav_home
+        binding.bottomNav.selectedItemId = R.id.nav_home
 
-        bottomNav.setOnItemSelectedListener {
+        binding.bottomNav.setOnItemSelectedListener {
             when (it.itemId) {
                 R.id.nav_home -> true
-
                 R.id.nav_discover -> {
                     startActivity(Intent(this, DiscoverActivity::class.java))
                     true
                 }
-
                 else -> false
             }
         }
