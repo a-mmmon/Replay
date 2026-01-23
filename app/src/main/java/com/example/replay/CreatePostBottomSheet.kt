@@ -10,6 +10,7 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import java.util.UUID
 
 class CreatePostBottomSheet : BottomSheetDialogFragment() {
 
@@ -52,7 +53,14 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
         rvSelectedMusic.adapter = selectedMusicAdapter
 
         btnAddMusic.setOnClickListener {
-            selectedMusicList.add(Music("Demo Song", "Demo Artist"))
+            val newMusic = Music(
+                id = UUID.randomUUID().toString(),
+                title = "Demo Song",
+                artist = "Demo Artist",
+                album = "", // Add the missing album parameter
+                coverUrl = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxITEhUTExIVFhUX"
+            )
+            selectedMusicList.add(newMusic)
             selectedMusicAdapter.notifyItemInserted(selectedMusicList.size - 1)
         }
 

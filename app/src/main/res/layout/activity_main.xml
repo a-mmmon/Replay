@@ -47,13 +47,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
+    <!-- Trending Albums Header -->
+    <TextView
+        android:id="@+id/trendingAlbumsHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trending Albums"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/artistsRecyclerView"
+        app:layout_constraintStart_toStartOf="parent"/>
+
     <!-- Albums Recycler -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/albumsRecyclerView"
         android:layout_width="0dp"
         android:layout_height="120dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/artistsRecyclerView"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/trendingAlbumsHeader"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
