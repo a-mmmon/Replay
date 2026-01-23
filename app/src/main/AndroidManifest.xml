@@ -10,9 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Replay">
 
-        <!-- Main Activity -->
+        <!-- HOME (Launcher) -->
         <activity
-            android:name=".MainActivity"
+            android:name=".FeedActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,26 +20,14 @@
             </intent-filter>
         </activity>
 
-        <!-- Discover Activity -->
+        <!-- DISCOVER -->
         <activity
             android:name=".DiscoverActivity"
-            android:exported="false"
-            android:parentActivityName=".MainActivity" />
-
-        <!-- Library Activity -->
-        <activity
-            android:name=".LibraryActivity"
-            android:exported="false"
-            android:parentActivityName=".MainActivity" />
-
-        <!-- Feed Activity (if you have one) -->
-        <activity
-            android:name=".FeedActivity"
             android:exported="false" />
 
-        <!-- Music Activity (if you have one) -->
+        <!-- OPTIONAL -->
         <activity
-            android:name=".Music"
+            android:name=".LibraryActivity"
             android:exported="false" />
 
     </application>

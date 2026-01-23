@@ -86,43 +86,38 @@ class MainActivity : AppCompatActivity() {
         // Artists
         artistsRecyclerView.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        // NOTE: You'll need to define the 'Artist' data class for this to compile
         val artists = listOf(
-            Artist("1", "Taylor Swift", ""),
-            Artist("2", "Ariana Grande", ""),
-            Artist("3", "Black Pink", ""),
-            Artist("4", "BTS", "")
+            Artist("1", "Taylor Swift", "https://picsum.photos/200/200?random=1"),
+            Artist("2", "Ariana Grande", "https://picsum.photos/200/200?random=2"),
+            Artist("3", "Black Pink", "https://picsum.photos/200/200?random=3"),
+            Artist("4", "BTS", "https://picsum.photos/200/200?random=4")
         )
-        // NOTE: You'll need to create the 'ArtistAdapter' class
         artistsRecyclerView.adapter = ArtistAdapter(artists)
 
         // Albums
         albumsRecyclerView.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        // NOTE: You'll need to define the 'Album' data class for this to compile
         val albums = listOf(
-            Album("locket", "Madison Beer", "data:image/jpeg;base64,..."),
-            Album("THE SIN: VANISH", "Enhypen", "data:image/jpeg;base64,/9j/...")
+            Album("01", "locket", "Madison Beer", "https://picsum.photos/200/200?random=5"),
+            Album("02", "locket", "Madison Beer", "https://picsum.photos/200/200?random=5"),
+            Album("03", "locket", "Madison Beer", "https://picsum.photos/200/200?random=5"),
+            Album("04", "locket", "Madison Beer", "https://picsum.photos/200/200?random=5")
         )
 
-        // NOTE: You'll need to create the 'AlbumAdapter' class
         albumsRecyclerView.adapter = AlbumAdapter(albums)
 
         // Feed with Songs
         feedRecyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Create sample music/songs list
-        // NOTE: You'll need to define the 'Music' data class
         val musicList = listOf(
-            Music("1", "Anti-Hero", "Taylor Swift", "Midnights", "image1"),
-            Music("2", "7 rings", "Ariana Grande", "thank u, next", "image2"),
-            Music("3", "How You Like That", "BLACKPINK", "THE ALBUM", "image3"),
-            Music("4", "Dynamite", "BTS", "BE", "image4"),
-            Music("5", "High On Heaven", "Nessa Barrett", "Pretty Poison", "image5"),
-            Music("6", "THE SIN: VANISH", "Enhypen", "Album Name", "image6")
+            Music("1", "Anti-Hero", "Taylor Swift", "Midnights", "https://picsum.photos/200/200?random=9"),
+            Music("2", "7 rings", "Ariana Grande", "thank u, next", "https://picsum.photos/200/200?random=10"),
+            Music("3", "How You Like That", "BLACKPINK", "THE ALBUM", "https://picsum.photos/200/200?random=11"),
+            Music("4", "Dynamite", "BTS", "BE", "https://picsum.photos/200/200?random=12"),
+            Music("5", "High On Heaven", "Nessa Barrett", "Pretty Poison", "https://picsum.photos/200/200?random=13"),
+            Music("6", "THE SIN: VANISH", "Enhypen", "Album Name", "https://picsum.photos/200/200?random=14")
         )
 
-        // NOTE: You'll need to create the 'SelectedMusicAdapter' class
         feedRecyclerView.adapter = SelectedMusicAdapter(musicList.toMutableList())
     }
 
