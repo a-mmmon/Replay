@@ -1,7 +1,7 @@
 package com.example.replay
 
 data class Album(
-    val name: String,
+    val title: String,
     val artistName: String,
-    val imageUrl: String
+    val coverUrl: String
 )

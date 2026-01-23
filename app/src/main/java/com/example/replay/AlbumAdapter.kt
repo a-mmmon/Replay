@@ -1,3 +1,5 @@
+// In app/src/main/java/com/example/replay/AlbumAdapter.kt
+
 package com.example.replay
 
 import android.view.LayoutInflater
@@ -8,29 +10,17 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
-// RecyclerView Adapter for displaying album list
-class AlbumAdapter(
-    private var albums: List<Album>
-) : RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
+// FIX: Remove the data class declaration from this file
+// data class Album(val title: String, val artistName: String, val coverUrl: String)
 
-    // ViewHolder holds album item views
-    inner class AlbumViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+class AlbumAdapter(private var albums: List<Album>) :
+    RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
 
-        val albumImage: ImageView = itemView.findViewById(R.id.albumImage)
-        val albumName: TextView = itemView.findViewById(R.id.albumName)
-        val artistName: TextView = itemView.findViewById(R.id.artistName)
-
-        // Bind album data to views
-        fun bind(album: Album) {
-            albumName.text = album.name
-            artistName.text = album.artistName
-
-            // Load album image using Glide
-            Glide.with(itemView.context)
-                .load(album.imageUrl)
-                .placeholder(R.drawable.ic_album_placeholder)
-                .into(albumImage)
-        }
+    class AlbumViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // Tip: I noticed your IDs in onBindViewHolder are different. Ensure these IDs match your item_album.xml layout.
+        val albumCover: ImageView = itemView.findViewById(R.id.albumImage)
+        val albumTitle: TextView = itemView.findViewById(R.id.albumName)
+        val albumArtist: TextView = itemView.findViewById(R.id.artistName)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
@@ -40,14 +30,19 @@ class AlbumAdapter(
     }
 
     override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
-        holder.bind(albums[position])
+        val album = albums[position]
+        holder.albumTitle.text = album.title
+        holder.albumArtist.text = album.artistName
+
+        Glide.with(holder.itemView.context)
+            .load(album.coverUrl)
+            .into(holder.albumCover)
     }
 
-    override fun getItemCount(): Int = albums.size
+    override fun getItemCount() = albums.size
 
-    // Update album list and refresh RecyclerView
     fun updateData(newAlbums: List<Album>) {
-        albums = newAlbums
+        this.albums = newAlbums
         notifyDataSetChanged()
     }
 }
