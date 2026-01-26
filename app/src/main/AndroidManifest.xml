@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.replay">
 
+    <!-- ✅ Permissions MUST be here -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- If minSdk < 33, also include this -->
+    <!-- <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> -->
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -20,12 +26,11 @@
             </intent-filter>
         </activity>
 
-        <!-- DISCOVER -->
+        <!-- Optional activities (safe to keep or remove) -->
         <activity
             android:name=".DiscoverActivity"
             android:exported="false" />
 
-        <!-- OPTIONAL -->
         <activity
             android:name=".LibraryActivity"
             android:exported="false" />
