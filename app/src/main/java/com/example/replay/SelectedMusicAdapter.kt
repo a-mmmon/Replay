@@ -7,15 +7,17 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
-class SelectedMusicAdapter(private var musicList: MutableList<Music>) :
-    RecyclerView.Adapter<SelectedMusicAdapter.MusicViewHolder>() {
+class SelectedMusicAdapter(
+    private val songs: List<Music>
+) : RecyclerView.Adapter<SelectedMusicAdapter.MusicViewHolder>() {
 
     inner class MusicViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val coverImage: ImageView = itemView.findViewById(R.id.musicCover)
-        val titleText: TextView = itemView.findViewById(R.id.musicTitle)
-        val artistText: TextView = itemView.findViewById(R.id.musicArtist)
-        val favoriteButton: ImageButton = itemView.findViewById(R.id.favoriteButton)
+        val cover: ImageView = itemView.findViewById(R.id.musicCover)
+        val title: TextView = itemView.findViewById(R.id.musicTitle)
+        val artist: TextView = itemView.findViewById(R.id.musicArtist)
+        val favorite: ImageButton = itemView.findViewById(R.id.favoriteButton)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
@@ -25,39 +27,22 @@ class SelectedMusicAdapter(private var musicList: MutableList<Music>) :
     }
 
     override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
-        val music = musicList[position]
-        holder.titleText.text = music.title
-        holder.artistText.text = music.artist
+        val song = songs[position]
 
-        // Update favorite button state
-        val isFavorite = FavoritesManager.isFavorite(holder.itemView.context, music.id)
-        updateFavoriteButton(holder.favoriteButton, isFavorite)
+        holder.title.text = song.title
+        holder.artist.text = song.artist
 
-        // Handle favorite button click
-        holder.favoriteButton.setOnClickListener {
-            if (FavoritesManager.isFavorite(holder.itemView.context, music.id)) {
-                FavoritesManager.removeFavorite(holder.itemView.context, music.id)
-                updateFavoriteButton(holder.favoriteButton, false)
-            } else {
-                FavoritesManager.addFavorite(holder.itemView.context, music)
-                updateFavoriteButton(holder.favoriteButton, true)
-            }
+        // Load album cover
+        Glide.with(holder.itemView.context)
+            .load(song.coverUrl)
+            .placeholder(android.R.color.darker_gray)
+            .into(holder.cover)
+
+        // (Optional) favorite button click
+        holder.favorite.setOnClickListener {
+            // later: save to favorites
         }
     }
 
-    private fun updateFavoriteButton(button: ImageButton, isFavorite: Boolean) {
-        if (isFavorite) {
-            button.setImageResource(android.R.drawable.star_big_on)
-        } else {
-            button.setImageResource(android.R.drawable.star_big_off)
-        }
-    }
-
-    override fun getItemCount() = musicList.size
-
-    fun updateData(newList: List<Music>) {
-        musicList.clear()
-        musicList.addAll(newList)
-        notifyDataSetChanged()
-    }
+    override fun getItemCount(): Int = songs.size
 }

@@ -47,3 +47,5 @@ class LibraryActivity : AppCompatActivity() {
         }
     }
 }
+
+private fun SelectedMusicAdapter.updateData(favorites: kotlin.collections.List<com.example.replay.Music>) {}

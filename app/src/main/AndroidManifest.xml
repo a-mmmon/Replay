@@ -4,6 +4,8 @@
 
     <!-- ✅ Permissions MUST be here -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
 
     <!-- If minSdk < 33, also include this -->
     <!-- <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> -->
@@ -26,10 +28,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Optional activities (safe to keep or remove) -->
-        <activity
-            android:name=".DiscoverActivity"
-            android:exported="false" />
+
 
         <activity
             android:name=".LibraryActivity"
