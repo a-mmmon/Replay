@@ -32,8 +32,8 @@ class FeedAdapter(
 
         holder.tvUserName.text = post.userName
         holder.tvPostContent.text = post.content
-        holder.tvLikeCount.text = post.likeCount.toString()
-        holder.tvPostTime.text = post.time
+        holder.tvLikeCount.text = post.likesCount.toString()  // ✅ FIXED: likeCount → likesCount
+        holder.tvPostTime.text = post.timestamp              // ✅ FIXED: time → timestamp
 
         holder.itemView.setOnClickListener {
             onPostClick(post)

@@ -57,7 +57,7 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
                 id = UUID.randomUUID().toString(),
                 title = "Demo Song",
                 artist = "Demo Artist",
-                album = "", // Add the missing album parameter
+                album = "",
                 coverUrl = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxITEhUTExIVFhUX"
             )
             selectedMusicList.add(newMusic)
@@ -65,12 +65,27 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
         }
 
         btnPost.setOnClickListener {
-            val post = Post(
-                userName = "Demo User",
+            // ✅ UPDATED: Create post with new format using current user profile
+            val newPost = Post(
+                userName = SampleData.currentUserProfile.userName,
+                userHandle = SampleData.currentUserProfile.userHandle,
+                userAvatarUrl = SampleData.currentUserProfile.avatarUrl,
                 content = etPostContent.text.toString(),
-                musicList = selectedMusicList.toList()
+                musicList = selectedMusicList.toList(),
+                timestamp = "Just now",
+                likesCount = 0
             )
-            onPostCreatedListener?.invoke(post)
+
+            // ✅ Add post to home feed
+            SampleData.posts.add(0, newPost)
+
+            // ✅ Add post to user's profile
+            SampleData.currentUserProfile.userPosts.add(0, newPost)
+
+            // ✅ Update user's post count
+            SampleData.currentUserProfile.postsCount = SampleData.currentUserProfile.userPosts.size
+
+            onPostCreatedListener?.invoke(newPost)
             dismiss()
         }
     }

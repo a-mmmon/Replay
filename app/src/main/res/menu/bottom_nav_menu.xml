@@ -11,9 +11,9 @@
         android:title="Discover" />
 
     <item
-        android:id="@+id/nav_post"
-        android:icon="@drawable/ic_add"
-        android:title="Post" />
+        android:id="@+id/nav_messages"
+        android:icon="@drawable/ic_messages"
+        android:title="Messages" />
 
     <item
         android:id="@+id/nav_library"

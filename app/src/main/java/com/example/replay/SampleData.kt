@@ -2,45 +2,150 @@ package com.example.replay
 
 object SampleData {
 
-    // Music data list that DiscoverActivity is looking for
-    val music = listOf(
-        Music("1", "Anti-Hero", "Taylor Swift", "Midnights", "https://picsum.photos/200/200?random=9"),
-        Music("2", "7 rings", "Ariana Grande", "thank u, next", "https://picsum.photos/200/200?random=10"),
-        Music("3", "How You Like That", "BLACKPINK", "THE ALBUM", "https://picsum.photos/200/200?random=11"),
-        Music("4", "Dynamite", "BTS", "BE", "https://picsum.photos/200/200?random=12")
+    // Sample music data
+    val sampleMusic1 = Music(
+        id = "1",
+        title = "Blinding Lights",
+        artist = "The Weeknd",
+        album = "After Hours",
+        coverUrl = ""
     )
 
-    // Album data list that DiscoverActivity is looking for
-    val albums = listOf(
-        Album("1", "locket", "Madison Beer", "https://picsum.photos/200/200?random=5"),
-        Album("2", "THE SIN: VANISH", "Enhypen", "https://picsum.photos/200/200?random=6"),
-        Album("3", "Midnights", "Taylor Swift", "https://picsum.photos/200/200?random=7")
+    val sampleMusic2 = Music(
+        id = "2",
+        title = "Levitating",
+        artist = "Dua Lipa",
+        album = "Future Nostalgia",
+        coverUrl = ""
     )
 
-    // Artist data list that DiscoverActivity is looking for
-    val artists = listOf(
-        Artist("1", "Taylor Swift", "https://picsum.photos/200/200?random=1"),
-        Artist("2", "Ariana Grande", "https://picsum.photos/200/200?random=2"),
-        Artist("3", "Black Pink", "https://picsum.photos/200/200?random=3"),
-        Artist("4", "BTS", "https://picsum.photos/200/200?random=4")
+    val sampleMusic3 = Music(
+        id = "3",
+        title = "Dynamite",
+        artist = "BTS",
+        album = "BE",
+        coverUrl = ""
     )
 
-    val posts = listOf(
+    // Sample posts for home feed
+    val posts = mutableListOf(
         Post(
             userName = "Taylor Swift",
+            userHandle = "@taylorswift",      // ADD THIS
+            userAvatarUrl = "",                // ADD THIS
             content = "Such a fun night making music! ✨",
-            musicList = listOf(music[0]) // Example: Anti-Hero
-        ),
-        Post(
-            userName = "Ariana Grande",
-            content = "In the studio, feeling inspired.",
-            musicList = listOf(music[1]) // Example: 7 rings
+            musicList = listOf(sampleMusic1),
+            timestamp = "Just now",            // ADD THIS
+            likesCount = 5                   // ADD THIS (optional, defaults to 0)
         ),
         Post(
             userName = "BTS",
-            content = "Just wrapped up our tour! Thank you, ARMY! 💜",
-            musicList = listOf(music[3]) // Example: Dynamite
+            userHandle = "@bts",      // ADD THIS
+            userAvatarUrl = "",                // ADD THIS
+            content = "Have a wonderful concert! ✨",
+            musicList = listOf(sampleMusic1),
+            timestamp = "An hour ago",            // ADD THIS
+            likesCount = 1000                   // ADD THIS (optional, defaults to 0)
+        ),
+        Post(
+            userName = "Black Pink",
+            userHandle = "@blackpink",      // ADD THIS
+            userAvatarUrl = "",                // ADD THIS
+            content = "How amazing is this new album! ✨",
+            musicList = listOf(sampleMusic1),
+            timestamp = "Yesterday",            // ADD THIS
+            likesCount = 2000                    // ADD THIS (optional, defaults to 0)
         )
     )
 
+    // Current user profile
+    val currentUserProfile = UserProfile(
+        userId = "user123",
+        userName = "Uri",
+        userHandle = "@uri",
+        avatarUrl = "",
+        followersCount = 245,
+        followingCount = 189,
+        postsCount = 0,
+        likesCount = 12,
+        streakCount = 5,
+        userPosts = mutableListOf() // User's posts will be added here when they create posts
+    )
+
+    // Sample conversations for messages
+    val conversations = listOf(
+        Conversation(
+            userId = "user1",
+            userName = "Taylor Swift",
+            userAvatarUrl = "",
+            lastMessage = "Thanks for sharing that song!",
+            timestamp = "2h",
+            unreadCount = 2
+        ),
+        Conversation(
+            userId = "user2",
+            userName = "Ariana Grande",
+            userAvatarUrl = "",
+            lastMessage = "Let's collaborate sometime",
+            timestamp = "5h",
+            unreadCount = 0
+        ),
+        Conversation(
+            userId = "user3",
+            userName = "BTS",
+            userAvatarUrl = "",
+            lastMessage = "Check out our new album!",
+            timestamp = "1d",
+            unreadCount = 1
+        ),
+        Conversation(
+            userId = "user4",
+            userName = "Ed Sheeran",
+            userAvatarUrl = "",
+            lastMessage = "See you at the concert!",
+            timestamp = "2d",
+            unreadCount = 0
+        )
+    )
+
+    // Sample albums for discover
+    val albums = listOf(
+        Album(
+            id = "album1",
+            name = "After Hours",
+            artist = "The Weeknd",
+            coverUrl = ""
+        ),
+        Album(
+            id = "album2",
+            name = "Future Nostalgia",
+            artist = "Dua Lipa",
+            coverUrl = ""
+        ),
+        Album(
+            id = "album3",
+            name = "BE",
+            artist = "BTS",
+            coverUrl = ""
+        )
+    )
+
+    // Sample artists for discover
+    val artists = listOf(
+        Artist(
+            id = "artist1",
+            name = "The Weeknd",
+            imageUrl = ""  // ✅ Correct parameter name
+        ),
+        Artist(
+            id = "artist2",
+            name = "Dua Lipa",
+            imageUrl = ""  // ✅ Correct parameter name
+        ),
+        Artist(
+            id = "artist3",
+            name = "BTS",
+            imageUrl = ""  // ✅ Correct parameter name
+        )
+    )
 }

@@ -2,8 +2,10 @@ package com.example.replay
 
 data class Post(
     val userName: String,
+    val userHandle: String,        // ADD THIS
+    val userAvatarUrl: String,     // ADD THIS
     val content: String,
-    val musicList: List<Music> = emptyList(),
-    val likeCount: Int = 0,
-    val time: String = "Just now"
+    val musicList: List<Music>,
+    val timestamp: String,          // ADD THIS
+    var likesCount: Int = 0        // ADD THIS
 )
