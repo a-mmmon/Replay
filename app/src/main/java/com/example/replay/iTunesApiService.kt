@@ -4,13 +4,13 @@ import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface iTunesApiService {
+interface ITunesApiService {
 
     @GET("search")
     fun searchSongs(
-        @Query("term") term: String,
+        @Query("term") searchTerm: String,
         @Query("media") media: String = "music",
         @Query("entity") entity: String = "song",
-        @Query("limit") limit: Int = 25
-    ): Call<iTunesResponse>
+        @Query("limit") limit: Int = 50
+    ): Call<ITunesResponse>
 }

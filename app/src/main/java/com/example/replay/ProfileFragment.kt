@@ -1,190 +1,331 @@
 package com.example.replay
 
 import android.content.Context
-import android.net.Uri
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.LinearLayout
+import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.imageview.ShapeableImageView
+import com.google.android.material.tabs.TabLayout
 
 class ProfileFragment : Fragment() {
 
-    private lateinit var imgProfile: ImageView
-    private lateinit var postsAdapter: FeedAdapter
-    private lateinit var rvUserPosts: RecyclerView
-    private lateinit var btnPostsTab: LinearLayout
-    private lateinit var btnLikesTab: LinearLayout
-    private lateinit var tabIndicator: View
-    private lateinit var tvPostsCount: TextView
-    private lateinit var tvLikesCount: TextView
+    private var profileImage: ShapeableImageView? = null
+    private var usernameText: TextView? = null  // ✅ FIXED: Changed from 'username' to 'usernameText'
+    private var handleText: TextView? = null     // ✅ FIXED: Changed from 'handle' to 'handleText'
+    private var followersCount: TextView? = null
+    private var followingCount: TextView? = null
+    private var streakCount: TextView? = null
+    private var postsRecyclerView: RecyclerView? = null
+    private var tabLayout: TabLayout? = null
+    private var settingsButton: ImageButton? = null
 
-    private var currentTab = "posts" // "posts" or "likes"
-
-    // 🔹 Image picker launcher
-    private val imagePicker =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            uri?.let {
-                imgProfile.setImageURI(it)
-                saveImageUri(it)
-            }
-        }
+    private var postsAdapter: FeedAdapter? = null
+    private val userPosts = mutableListOf<Post>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.fragment_profile, container, false)
+    ): View? {
+        return try {
+            inflater.inflate(R.layout.fragment_profile, container, false)
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error inflating layout", e)
+            null
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        imgProfile = view.findViewById(R.id.imgProfile)
-        val tvName = view.findViewById<TextView>(R.id.tvName)
-        val tvHandle = view.findViewById<TextView>(R.id.tvHandle)
-        val tvFollowers = view.findViewById<TextView>(R.id.tvFollowers)
-        val tvFollowing = view.findViewById<TextView>(R.id.tvFollowing)
-        val tvStreak = view.findViewById<TextView>(R.id.tvStreak)
-        val btnLogout = view.findViewById<Button>(R.id.btnLogout)
-        rvUserPosts = view.findViewById(R.id.rvUserPosts)
-
-        // Tab buttons
-        btnPostsTab = view.findViewById(R.id.btnPostsTab)
-        btnLikesTab = view.findViewById(R.id.btnLikesTab)
-        tabIndicator = view.findViewById(R.id.tabIndicator)
-        tvPostsCount = view.findViewById(R.id.tvPostsCount)
-        tvLikesCount = view.findViewById(R.id.tvLikesCount)
-
-        // Get user profile data
-        val userProfile = SampleData.currentUserProfile
-
-        // Set user info
-        tvName.text = userProfile.userName
-        tvHandle.text = userProfile.userHandle
-        tvFollowers.text = userProfile.followersCount.toString()
-        tvFollowing.text = userProfile.followingCount.toString()
-        tvStreak.text = userProfile.streakCount.toString()
-
-        // Update counts
-        updateCounts()
-
-        loadSavedImage()
-
-        // Setup user posts RecyclerView
-        postsAdapter = FeedAdapter(userProfile.userPosts) { post ->
-            // Optional: handle post click
-        }
-        rvUserPosts.layoutManager = LinearLayoutManager(requireContext())
-        rvUserPosts.adapter = postsAdapter
-
-        // Set Posts tab as default selected
-        selectPostsTab()
-
-        // Posts tab click
-        btnPostsTab.setOnClickListener {
-            selectPostsTab()
-        }
-
-        // Likes tab click
-        btnLikesTab.setOnClickListener {
-            selectLikesTab()
-        }
-
-        // 📸 Tap image to change
-        imgProfile.setOnClickListener {
-            imagePicker.launch("image/*")
-        }
-
-        btnLogout.setOnClickListener {
-            Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
+        try {
+            initializeViews(view)
+            loadUserProfile()
+            setupRecyclerView()
+            setupTabs()
+            setupSettingsButton()
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error in onViewCreated", e)
         }
     }
 
-    private fun selectPostsTab() {
-        currentTab = "posts"
-
-        // Show user's posts
-        val userProfile = SampleData.currentUserProfile
-        postsAdapter = FeedAdapter(userProfile.userPosts) { post ->
-            // Optional: handle post click
-        }
-        rvUserPosts.adapter = postsAdapter
-
-        // Update tab indicator position (move to left half)
-        val params = tabIndicator.layoutParams as ViewGroup.MarginLayoutParams
-        params.width = btnPostsTab.width
-        params.marginStart = 0
-        tabIndicator.layoutParams = params
-    }
-
-    private fun selectLikesTab() {
-        currentTab = "likes"
-
-        // Show liked posts (filter posts with likes > 0 or create a separate liked posts list)
-        // For now, showing all posts from feed that user might have liked
-        val likedPosts = SampleData.posts.filter { it.likesCount > 0 }
-        postsAdapter = FeedAdapter(likedPosts) { post ->
-            // Optional: handle post click
-        }
-        rvUserPosts.adapter = postsAdapter
-
-        // Update tab indicator position (move to right half)
-        val params = tabIndicator.layoutParams as ViewGroup.MarginLayoutParams
-        params.width = btnLikesTab.width
-        params.marginStart = btnPostsTab.width
-        tabIndicator.layoutParams = params
-    }
-
-    private fun updateCounts() {
-        val userProfile = SampleData.currentUserProfile
-        tvPostsCount.text = " (${userProfile.userPosts.size})"
-
-        // Count liked posts (you can customize this logic)
-        val likedCount = SampleData.posts.count { it.likesCount > 0 }
-        tvLikesCount.text = " ($likedCount)"
-    }
-
-    // 💾 Save image URI
-    private fun saveImageUri(uri: Uri) {
-        val prefs = requireContext()
-            .getSharedPreferences("profile_prefs", Context.MODE_PRIVATE)
-
-        prefs.edit()
-            .putString("profile_image", uri.toString())
-            .apply()
-    }
-
-    // 🔁 Load saved image
-    private fun loadSavedImage() {
-        val prefs = requireContext()
-            .getSharedPreferences("profile_prefs", Context.MODE_PRIVATE)
-
-        val uriString = prefs.getString("profile_image", null)
-        uriString?.let {
-            imgProfile.setImageURI(Uri.parse(it))
-        }
-    }
-
-    // Call this when fragment resumes to refresh posts
     override fun onResume() {
         super.onResume()
-        updateCounts()
-
-        // Refresh current tab
-        if (currentTab == "posts") {
-            selectPostsTab()
-        } else {
-            selectLikesTab()
+        try {
+            loadUserPosts()
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error in onResume", e)
         }
+    }
+
+    private fun initializeViews(view: View) {
+        try {
+            profileImage = view.findViewById(R.id.profileImage)
+            usernameText = view.findViewById(R.id.usernameText)  // ✅ FIXED
+            handleText = view.findViewById(R.id.handleText)      // ✅ FIXED
+            followersCount = view.findViewById(R.id.followersCount)
+            followingCount = view.findViewById(R.id.followingCount)
+            streakCount = view.findViewById(R.id.streakCount)
+            postsRecyclerView = view.findViewById(R.id.postsRecyclerView)
+            tabLayout = view.findViewById(R.id.tabLayout)
+            settingsButton = view.findViewById(R.id.settingsButton)
+
+            Log.d("ProfileFragment", "All views initialized successfully")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error finding views", e)
+        }
+    }
+
+    private fun loadUserProfile() {
+        try {
+            val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            val currentUsername = prefs.getString("username", "uri") ?: "uri"
+            val currentHandle = prefs.getString("user_handle", "@$currentUsername") ?: "@$currentUsername"
+
+            usernameText?.text = currentUsername  // ✅ FIXED
+            handleText?.text = currentHandle      // ✅ FIXED
+
+            followersCount?.text = prefs.getInt("followers", 245).toString()
+            followingCount?.text = prefs.getInt("following", 189).toString()
+            streakCount?.text = prefs.getInt("streak", 5).toString()
+
+            Log.d("ProfileFragment", "User profile loaded: $currentUsername")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error loading user profile", e)
+        }
+    }
+
+    private fun setupRecyclerView() {
+        try {
+            val recyclerView = postsRecyclerView ?: return
+
+            postsAdapter = FeedAdapter(userPosts) { post ->
+                // Handle post click
+                Log.d("ProfileFragment", "Post clicked: ${post.postId}")
+            }
+            recyclerView.layoutManager = LinearLayoutManager(requireContext())
+            recyclerView.adapter = postsAdapter
+
+            loadUserPosts()
+
+            Log.d("ProfileFragment", "RecyclerView setup complete")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error setting up RecyclerView", e)
+        }
+    }
+
+    private fun setupTabs() {
+        try {
+            val tabs = tabLayout ?: return
+
+            // Clear existing tabs first
+            tabs.removeAllTabs()
+
+            // Add tabs
+            tabs.addTab(tabs.newTab().setText("Posts"))
+            tabs.addTab(tabs.newTab().setText("Likes"))
+
+            tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab?) {
+                    try {
+                        when (tab?.position) {
+                            0 -> {
+                                Log.d("ProfileFragment", "Posts tab selected")
+                                loadUserPosts()
+                            }
+                            1 -> {
+                                Log.d("ProfileFragment", "Likes tab selected")
+                                loadUserLikes()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ProfileFragment", "Error in tab selection", e)
+                    }
+                }
+
+                override fun onTabUnselected(tab: TabLayout.Tab?) {}
+                override fun onTabReselected(tab: TabLayout.Tab?) {}
+            })
+
+            Log.d("ProfileFragment", "Tabs setup complete")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error setting up tabs", e)
+        }
+    }
+
+    private fun setupSettingsButton() {
+        try {
+            settingsButton?.setOnClickListener {
+                showSettingsMenu()
+            }
+            Log.d("ProfileFragment", "Settings button setup complete")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error setting up settings button", e)
+        }
+    }
+
+    private fun showSettingsMenu() {
+        try {
+            android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Settings")
+                .setItems(arrayOf("Edit Profile", "Logout")) { _, which ->
+                    when (which) {
+                        0 -> {
+                            // Edit profile - implement later
+                            Log.d("ProfileFragment", "Edit Profile clicked")
+                        }
+                        1 -> {
+                            performLogout()
+                        }
+                    }
+                }
+                .show()
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error showing settings menu", e)
+        }
+    }
+
+    private fun performLogout() {
+        try {
+            val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("is_logged_in", false).apply()
+
+            val intent = Intent(requireContext(), LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            requireActivity().finish()
+
+            Log.d("ProfileFragment", "Logout successful")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error performing logout", e)
+        }
+    }
+
+    private fun loadUserPosts() {
+        try {
+            val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            val currentUsername = prefs.getString("username", "uri") ?: "uri"
+
+            userPosts.clear()
+
+            val postCount = prefs.getInt("post_count", 0)
+            Log.d("ProfileFragment", "Loading $postCount posts")
+
+            for (i in 0 until postCount) {
+                val postId = prefs.getString("post_${i}_id", null)
+                val caption = prefs.getString("post_${i}_caption", null)
+                val timestamp = prefs.getLong("post_${i}_timestamp", 0L)
+                val likes = prefs.getInt("post_${i}_likes", 0)
+
+                if (postId != null && caption != null) {
+                    userPosts.add(
+                        Post(
+                            postId = postId,
+                            userId = "current_user",
+                            username = currentUsername,
+                            userProfileImage = "",
+                            caption = caption,
+                            imageUrl = "",
+                            likes = likes,
+                            comments = 0,
+                            timestamp = timestamp,
+                            music = null
+                        )
+                    )
+                }
+            }
+
+            if (userPosts.isEmpty()) {
+                userPosts.addAll(getSampleUserPosts(currentUsername))
+                Log.d("ProfileFragment", "Loaded sample posts")
+            }
+
+            postsAdapter?.notifyDataSetChanged()
+
+            val postsTab = tabLayout?.getTabAt(0)
+            postsTab?.text = "Posts (${userPosts.size})"
+
+            Log.d("ProfileFragment", "Loaded ${userPosts.size} user posts")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error loading user posts", e)
+        }
+    }
+
+    private fun loadUserLikes() {
+        try {
+            userPosts.clear()
+            userPosts.addAll(getSampleLikedPosts())
+            postsAdapter?.notifyDataSetChanged()
+
+            Log.d("ProfileFragment", "Loaded ${userPosts.size} liked posts")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error loading user likes", e)
+        }
+    }
+
+    private fun getSampleUserPosts(username: String): List<Post> {
+        return listOf(
+            Post(
+                postId = "sample_1",
+                userId = "current_user",
+                username = username,
+                userProfileImage = "",
+                caption = "Just shared my favorite playlist! 🎵",
+                imageUrl = "",
+                likes = 42,
+                comments = 8,
+                timestamp = System.currentTimeMillis() - 3600000,
+                music = null
+            )
+        )
+    }
+
+    private fun getSampleLikedPosts(): List<Post> {
+        return listOf(
+            Post(
+                postId = "liked_1",
+                userId = "user1",
+                username = "Taylor Swift",
+                userProfileImage = "",
+                caption = "Such a fun night making music! ✨",
+                imageUrl = "",
+                likes = 5,
+                comments = 2,
+                timestamp = System.currentTimeMillis() - 10800000,
+                music = null
+            ),
+            Post(
+                postId = "liked_2",
+                userId = "user2",
+                username = "BTS",
+                userProfileImage = "",
+                caption = "Have a wonderful concert! ✨",
+                imageUrl = "",
+                likes = 1000,
+                comments = 150,
+                timestamp = System.currentTimeMillis() - 3600000,
+                music = null
+            ),
+            Post(
+                postId = "liked_3",
+                userId = "user3",
+                username = "Black Pink",
+                userProfileImage = "",
+                caption = "How amazing is this new album! ✨",
+                imageUrl = "",
+                likes = 2000,
+                comments = 200,
+                timestamp = System.currentTimeMillis() - 86400000,
+                music = null
+            )
+        )
     }
 }

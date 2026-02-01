@@ -5,43 +5,49 @@ import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-object FavoritesManager {
-    private const val PREFS_NAME = "replay_favorites"
-    private const val FAVORITES_KEY = "favorite_songs"
+object FavoriteManager {
+
+    private const val PREFS_NAME = "FavoritesPrefs"
+    private const val KEY_FAVORITES = "favorite_songs"
+    private var sharedPrefs: SharedPreferences? = null
     private val gson = Gson()
 
-    private fun getPreferences(context: Context): SharedPreferences {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
-    fun addFavorite(context: Context, music: Music) {
-        val favorites = getFavorites(context).toMutableList()
-        if (!favorites.any { it.id == music.id }) {
-            favorites.add(music)
-            saveFavorites(context, favorites)
+    fun init(context: Context) {
+        if (sharedPrefs == null) {
+            sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         }
     }
 
-    fun removeFavorite(context: Context, musicId: String) {
-        val favorites = getFavorites(context).toMutableList()
-        favorites.removeAll { it.id == musicId }
-        saveFavorites(context, favorites)
+    fun addToFavorites(song: ITunesSong) {
+        val favorites = getFavorites().toMutableList()
+        if (!favorites.any { it.trackId == song.trackId }) {
+            favorites.add(song)
+            saveFavorites(favorites)
+        }
     }
 
-    fun isFavorite(context: Context, musicId: String): Boolean {
-        return getFavorites(context).any { it.id == musicId }
+    fun removeFromFavorites(song: ITunesSong) {
+        val favorites = getFavorites().toMutableList()
+        favorites.removeAll { it.trackId == song.trackId }
+        saveFavorites(favorites)
     }
 
-    fun getFavorites(context: Context): List<Music> {
-        val prefs = getPreferences(context)
-        val json = prefs.getString(FAVORITES_KEY, null) ?: return emptyList()
-        val type = object : TypeToken<List<Music>>() {}.type
-        return gson.fromJson(json, type)
+    fun isFavorite(song: ITunesSong): Boolean {
+        return getFavorites().any { it.trackId == song.trackId }
     }
 
-    private fun saveFavorites(context: Context, favorites: List<Music>) {
-        val prefs = getPreferences(context)
+    fun getFavorites(): List<ITunesSong> {
+        val json = sharedPrefs?.getString(KEY_FAVORITES, null) ?: return emptyList()
+        val type = object : TypeToken<List<ITunesSong>>() {}.type
+        return try {
+            gson.fromJson(json, type)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveFavorites(favorites: List<ITunesSong>) {
         val json = gson.toJson(favorites)
-        prefs.edit().putString(FAVORITES_KEY, json).apply()
+        sharedPrefs?.edit()?.putString(KEY_FAVORITES, json)?.apply()
     }
 }

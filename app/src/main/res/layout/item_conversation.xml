@@ -1,77 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp"
+    android:padding="16dp"
+    android:clickable="true"
+    android:focusable="true"
     android:background="?attr/selectableItemBackground">
 
-    <!-- Avatar -->
-    <ImageView
-        android:id="@+id/imgConversationAvatar"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@mipmap/ic_launcher"
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/profileImage"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/CircleImageView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- User Name -->
     <TextView
-        android:id="@+id/tvConversationUserName"
+        android:id="@+id/userName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="User Name"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintStart_toEndOf="@id/imgConversationAvatar"
-        app:layout_constraintEnd_toStartOf="@id/tvConversationTimestamp"
-        app:layout_constraintTop_toTopOf="@id/imgConversationAvatar"/>
-
-    <!-- Last Message -->
-    <TextView
-        android:id="@+id/tvLastMessage"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Last message preview..."
-        android:textSize="14sp"
-        android:textColor="#666666"
+        android:textColor="?android:attr/textColorPrimary"
         android:maxLines="1"
         android:ellipsize="end"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintStart_toEndOf="@id/imgConversationAvatar"
-        app:layout_constraintEnd_toStartOf="@id/tvUnreadBadge"
-        app:layout_constraintTop_toBottomOf="@id/tvConversationUserName"/>
+        app:layout_constraintStart_toEndOf="@id/profileImage"
+        app:layout_constraintEnd_toStartOf="@id/rightContainer"
+        app:layout_constraintTop_toTopOf="@id/profileImage"
+        tools:text="Taylor Swift" />
 
-    <!-- Timestamp -->
     <TextView
-        android:id="@+id/tvConversationTimestamp"
+        android:id="@+id/lastMessage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="14sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toStartOf="@id/userName"
+        app:layout_constraintEnd_toEndOf="@id/userName"
+        app:layout_constraintTop_toBottomOf="@id/userName"
+        tools:text="Thanks for sharing that song!" />
+
+    <!-- ✅ FIXED: Right container to hold timestamp and badge vertically -->
+    <LinearLayout
+        android:id="@+id/rightContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="2h"
-        android:textSize="12sp"
-        android:textColor="#999999"
+        android:orientation="vertical"
+        android:gravity="end|center_vertical"
+        android:layout_marginStart="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tvConversationUserName"/>
+        app:layout_constraintTop_toTopOf="@id/profileImage"
+        app:layout_constraintBottom_toBottomOf="@id/profileImage">
 
-    <!-- Unread Badge -->
-    <TextView
-        android:id="@+id/tvUnreadBadge"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:text="3"
-        android:textSize="12sp"
-        android:textColor="@android:color/white"
-        android:background="@drawable/bg_unread_badge"
-        android:gravity="center"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/imgConversationAvatar"/>
+        <TextView
+            android:id="@+id/timestamp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="?android:attr/textColorSecondary"
+            tools:text="2h" />
+
+        <TextView
+            android:id="@+id/unreadBadge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/circle_background"
+            android:gravity="center"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="2" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

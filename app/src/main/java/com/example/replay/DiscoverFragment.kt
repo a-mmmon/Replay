@@ -17,7 +17,7 @@ class DiscoverFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: DiscoverAdapter
-    private val songList = mutableListOf<Music>()
+    private val songList = mutableListOf<ITunesSong>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,7 +35,6 @@ class DiscoverFragment : Fragment() {
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // ✅ USE THE CORRECT ADAPTER
         adapter = DiscoverAdapter(songList)
         recyclerView.adapter = adapter
 
@@ -57,32 +56,22 @@ class DiscoverFragment : Fragment() {
 
     private fun searchSongs(query: String) {
         RetrofitClient.api.searchSongs(query)
-            .enqueue(object : Callback<iTunesResponse> {
+            .enqueue(object : Callback<ITunesResponse> {
 
                 override fun onResponse(
-                    call: Call<iTunesResponse>,
-                    response: Response<iTunesResponse>
+                    call: Call<ITunesResponse>,
+                    response: Response<ITunesResponse>
                 ) {
                     if (response.isSuccessful) {
                         val results = response.body()?.results ?: emptyList()
 
-                        val mappedSongs = results.map {
-                            Music(
-                                id = it.trackId.toString(),
-                                title = it.trackName,
-                                artist = it.artistName,
-                                album = it.collectionName ?: "Unknown Album",
-                                coverUrl = it.artworkUrl100 ?: ""
-                            )
-                        }
-
                         songList.clear()
-                        songList.addAll(mappedSongs)
+                        songList.addAll(results)
                         adapter.notifyDataSetChanged()
 
                         Toast.makeText(
                             requireContext(),
-                            "Found ${mappedSongs.size} songs",
+                            "Found ${results.size} songs",
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
@@ -94,7 +83,7 @@ class DiscoverFragment : Fragment() {
                     }
                 }
 
-                override fun onFailure(call: Call<iTunesResponse>, t: Throwable) {
+                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
                     t.printStackTrace()
                     Toast.makeText(
                         requireContext(),
@@ -105,4 +94,3 @@ class DiscoverFragment : Fragment() {
             })
     }
 }
-

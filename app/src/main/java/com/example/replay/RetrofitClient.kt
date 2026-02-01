@@ -7,12 +7,12 @@ object RetrofitClient {
 
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("https://itunes.apple.com/") // ✅ MUST end with /
+            .baseUrl("https://itunes.apple.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    val api: iTunesApiService by lazy {
-        retrofit.create(iTunesApiService::class.java)
+    val api: ITunesApiService by lazy {
+        retrofit.create(ITunesApiService::class.java)
     }
 }

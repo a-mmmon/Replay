@@ -35,7 +35,7 @@ class LibraryActivity : AppCompatActivity() {
     }
 
     private fun loadFavorites() {
-        val favorites = FavoritesManager.getFavorites(this)
+        val favorites = FavoriteManager.getFavorites()  // ✅ FIXED: FavoritesManager → FavoriteManager (removed 's')
 
         if (favorites.isEmpty()) {
             emptyStateText.visibility = TextView.VISIBLE
@@ -47,5 +47,3 @@ class LibraryActivity : AppCompatActivity() {
         }
     }
 }
-
-private fun SelectedMusicAdapter.updateData(favorites: kotlin.collections.List<com.example.replay.Music>) {}

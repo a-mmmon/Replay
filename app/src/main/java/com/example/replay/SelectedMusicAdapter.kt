@@ -3,21 +3,19 @@ package com.example.replay
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
 class SelectedMusicAdapter(
-    private val songs: List<Music>
+    private var songs: MutableList<ITunesSong>  // ✅ FIXED: Music → ITunesSong
 ) : RecyclerView.Adapter<SelectedMusicAdapter.MusicViewHolder>() {
 
     inner class MusicViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val cover: ImageView = itemView.findViewById(R.id.musicCover)
-        val title: TextView = itemView.findViewById(R.id.musicTitle)
-        val artist: TextView = itemView.findViewById(R.id.musicArtist)
-        val favorite: ImageButton = itemView.findViewById(R.id.favoriteButton)
+        val musicCover: ImageView = itemView.findViewById(R.id.musicCover)
+        val musicTitle: TextView = itemView.findViewById(R.id.musicTitle)
+        val musicArtist: TextView = itemView.findViewById(R.id.musicArtist)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
@@ -29,20 +27,25 @@ class SelectedMusicAdapter(
     override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
         val song = songs[position]
 
-        holder.title.text = song.title
-        holder.artist.text = song.artist
+        holder.musicTitle.text = song.trackName      // ✅ FIXED: title → trackName
+        holder.musicArtist.text = song.artistName    // ✅ FIXED: artist → artistName
 
-        // Load album cover
-        Glide.with(holder.itemView.context)
-            .load(song.coverUrl)
-            .placeholder(android.R.color.darker_gray)
-            .into(holder.cover)
-
-        // (Optional) favorite button click
-        holder.favorite.setOnClickListener {
-            // later: save to favorites
+        // Load album artwork
+        if (song.artworkUrl100.isNotEmpty()) {       // ✅ FIXED: coverUrl → artworkUrl100
+            Glide.with(holder.itemView.context)
+                .load(song.artworkUrl100)
+                .placeholder(R.drawable.ic_android_placeholder)
+                .into(holder.musicCover)
+        } else {
+            holder.musicCover.setImageResource(R.drawable.ic_android_placeholder)
         }
     }
 
     override fun getItemCount(): Int = songs.size
+
+    fun updateData(newSongs: List<ITunesSong>) {  // ✅ FIXED: Music → ITunesSong, added this method
+        songs.clear()
+        songs.addAll(newSongs)
+        notifyDataSetChanged()
+    }
 }

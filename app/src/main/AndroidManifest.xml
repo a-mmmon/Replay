@@ -2,15 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.replay">
 
-    <!-- ✅ Permissions MUST be here -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Add internet permission for loading images -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-
-    <!-- If minSdk < 33, also include this -->
-    <!-- <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> -->
-
     <application
+        android:name=".ReplayApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -18,21 +14,40 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Replay">
 
-        <!-- HOME (Launcher) -->
+        <!-- LOGIN ACTIVITY - LAUNCHER (Shows first) -->
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Replay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-
-
+        <!-- MAIN ACTIVITY (After login) -->
         <activity
-            android:name=".LibraryActivity"
+            android:name=".MainActivity"
             android:exported="false" />
+
+        <!-- NEW MESSAGE ACTIVITY -->
+        <activity
+            android:name=".NewMessageActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- CONVERSATION ACTIVITY -->
+        <activity
+            android:name=".ConversationActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Replay" />
+
+        <!-- EDIT PROFILE ACTIVITY -->
+        <activity
+            android:name=".EditProfileActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
 
     </application>
 
