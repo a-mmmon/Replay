@@ -11,6 +11,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 class CreatePostBottomSheet : BottomSheetDialogFragment() {
@@ -97,8 +98,10 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
 
         // Load album art
         if (music.artworkUrl100.isNotEmpty()) {
-            // Use your image loading library (Glide, Picasso, etc.)
-            // Glide.with(this).load(music.artworkUrl100).into(musicImage)
+            Glide.with(this)
+                .load(music.artworkUrl100)
+                .placeholder(R.drawable.ic_music_note)
+                .into(musicImage)
         }
 
         updateFavoriteButton()
@@ -162,7 +165,7 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
             music = selectedMusic
         )
 
-        // ✅ SAVE POST TO SHAREDPREFERENCES
+        // ✅ SAVE POST TO SHAREDPREFERENCES WITH MUSIC
         savePost(post)
 
         // Show success message
@@ -185,8 +188,17 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
         editor.putLong("post_${postCount}_timestamp", post.timestamp)
         editor.putInt("post_${postCount}_likes", post.likes)
 
-        // TODO: Save music if present
-        // if (post.music != null) { ... }
+        // ✅ FIXED: Save music if present
+        if (post.music != null) {
+            editor.putLong("post_${postCount}_music_trackId", post.music.trackId)
+            editor.putString("post_${postCount}_music_trackName", post.music.trackName)
+            editor.putString("post_${postCount}_music_artistName", post.music.artistName)
+            editor.putString("post_${postCount}_music_artworkUrl", post.music.artworkUrl100)
+            editor.putString("post_${postCount}_music_previewUrl", post.music.previewUrl)
+            editor.putString("post_${postCount}_music_collectionName", post.music.collectionName)
+            editor.putString("post_${postCount}_music_trackViewUrl", post.music.trackViewUrl)
+            editor.putString("post_${postCount}_music_releaseDate", post.music.releaseDate)
+        }
 
         // Increment post count
         editor.putInt("post_count", postCount + 1)
