@@ -2,170 +2,82 @@ package com.example.replay
 
 object SampleData {
 
-    // Sample music data (using ITunesSong from DataModels.kt)
+    // ✅ ADDED: Individual music samples that were missing
     val sampleMusic1 = ITunesSong(
-        trackId = 1L,
-        trackName = "Blinding Lights",
-        artistName = "The Weeknd",
-        collectionName = "After Hours",
-        artworkUrl100 = "",
-        previewUrl = "",
-        trackTimeMillis = 200000L,
-        releaseDate = "2020-03-20",
-        primaryGenreName = "Pop"
+        trackId = 1,
+        trackName = "Anti-Hero",
+        artistName = "Taylor Swift",
+        artworkUrl100 = "https://example.com/artwork1.jpg",
+        previewUrl = "https://example.com/preview1.mp3",
+        collectionName = "Midnights",
+        trackViewUrl = "https://music.apple.com/us/album/anti-hero/1",
+        releaseDate = "2022-10-21"
     )
 
     val sampleMusic2 = ITunesSong(
-        trackId = 2L,
-        trackName = "Levitating",
-        artistName = "Dua Lipa",
-        collectionName = "Future Nostalgia",
-        artworkUrl100 = "",
-        previewUrl = "",
-        trackTimeMillis = 203000L,
-        releaseDate = "2020-03-27",
-        primaryGenreName = "Pop"
+        trackId = 2,
+        trackName = "As It Was",
+        artistName = "Harry Styles",
+        artworkUrl100 = "https://example.com/artwork2.jpg",
+        previewUrl = "https://example.com/preview2.mp3",
+        collectionName = "Harry's House",
+        trackViewUrl = "https://music.apple.com/us/album/as-it-was/2",
+        releaseDate = "2022-04-01"
     )
 
     val sampleMusic3 = ITunesSong(
-        trackId = 3L,
-        trackName = "Dynamite",
-        artistName = "BTS",
-        collectionName = "BE",
-        artworkUrl100 = "",
-        previewUrl = "",
-        trackTimeMillis = 199000L,
-        releaseDate = "2020-11-20",
-        primaryGenreName = "Pop"
+        trackId = 3,
+        trackName = "Flowers",
+        artistName = "Miley Cyrus",
+        artworkUrl100 = "https://example.com/artwork3.jpg",
+        previewUrl = "https://example.com/preview3.mp3",
+        collectionName = "Endless Summer Vacation",
+        trackViewUrl = "https://music.apple.com/us/album/flowers/3",
+        releaseDate = "2023-01-13"
     )
 
-    // Sample posts for home feed (using Post from DataModels.kt)
-    val posts = mutableListOf(
-        Post(
-            postId = "post1",
-            userId = "user_taylor",
-            username = "Taylor Swift",
-            userProfileImage = "",
-            caption = "Such a fun night making music! ✨",
-            imageUrl = "",
-            likes = 5,
-            comments = 0,
-            timestamp = System.currentTimeMillis() - 60000L, // 1 minute ago
-            music = sampleMusic1
-        ),
-        Post(
-            postId = "post2",
-            userId = "user_bts",
-            username = "BTS",
-            userProfileImage = "",
-            caption = "Have a wonderful concert! ✨",
-            imageUrl = "",
-            likes = 1000,
-            comments = 50,
-            timestamp = System.currentTimeMillis() - 3600000L, // 1 hour ago
-            music = sampleMusic2
-        ),
-        Post(
-            postId = "post3",
-            userId = "user_blackpink",
-            username = "Black Pink",
-            userProfileImage = "",
-            caption = "How amazing is this new album! ✨",
-            imageUrl = "",
-            likes = 2000,
-            comments = 100,
-            timestamp = System.currentTimeMillis() - 86400000L, // 1 day ago
-            music = sampleMusic3
+    // Sample songs for testing
+    val sampleSongs = listOf(
+        sampleMusic1,
+        sampleMusic2,
+        sampleMusic3,
+        ITunesSong(
+            trackId = 4,
+            trackName = "Calm Down",
+            artistName = "Rema & Selena Gomez",
+            artworkUrl100 = "https://example.com/artwork4.jpg",
+            previewUrl = "https://example.com/preview4.mp3",
+            collectionName = "Rave & Roses",
+            trackViewUrl = "https://music.apple.com/us/album/calm-down/4",
+            releaseDate = "2022-08-25"
         )
     )
 
-    // Current user profile (using UserProfile from DataModels.kt)
-    val currentUserProfile = UserProfile(
-        userId = "user123",
-        username = "Uri",
-        profileImage = "",
-        bio = "Music lover 🎵",
-        followers = 245,
-        following = 189
-    )
-
-    // Sample conversations for messages (using Conversation from DataModels.kt)
-    val conversations = listOf(
-        Conversation(
-            conversationId = "conv1",
-            otherUserId = "user_taylor",
-            otherUserName = "Taylor Swift",
-            otherUserProfileImage = "",
-            lastMessage = "Thanks for sharing that song!",
-            timestamp = System.currentTimeMillis() - 7200000L, // 2 hours ago
-            unreadBadge = 2,
-            messages = emptyList()
-        ),
-        Conversation(
-            conversationId = "conv2",
-            otherUserId = "user_ariana",
-            otherUserName = "Ariana Grande",
-            otherUserProfileImage = "",
-            lastMessage = "Let's collaborate sometime",
-            timestamp = System.currentTimeMillis() - 18000000L, // 5 hours ago
-            unreadBadge = 0,
-            messages = emptyList()
-        ),
-        Conversation(
-            conversationId = "conv3",
-            otherUserId = "user_bts",
-            otherUserName = "BTS",
-            otherUserProfileImage = "",
-            lastMessage = "Check out our new album!",
-            timestamp = System.currentTimeMillis() - 86400000L, // 1 day ago
-            unreadBadge = 1,
-            messages = emptyList()
-        ),
-        Conversation(
-            conversationId = "conv4",
-            otherUserId = "user_ed",
-            otherUserName = "Ed Sheeran",
-            otherUserProfileImage = "",
-            lastMessage = "See you at the concert!",
-            timestamp = System.currentTimeMillis() - 172800000L, // 2 days ago
-            unreadBadge = 0,
-            messages = emptyList()
-        )
-    )
-
-    // Sample users to message
-    val usersToMessage = listOf(
-        UserProfile(
-            userId = "user_taylor",
+    // Sample posts for feed
+    val samplePosts = listOf(
+        Post(
+            postId = "1",
+            userId = "user1",
             username = "Taylor Swift",
-            profileImage = "",
-            bio = "Singer-songwriter",
-            followers = 1000000,
-            following = 500
+            userProfileImage = "",
+            caption = "Just released my new album!",
+            imageUrl = "",
+            likes = 1234,
+            comments = 89,
+            timestamp = System.currentTimeMillis() - 3600000,
+            music = sampleSongs[0]
         ),
-        UserProfile(
-            userId = "user_ariana",
-            username = "Ariana Grande",
-            profileImage = "",
-            bio = "Artist",
-            followers = 2000000,
-            following = 600
-        ),
-        UserProfile(
-            userId = "user_bts",
-            username = "BTS",
-            profileImage = "",
-            bio = "K-Pop Group",
-            followers = 5000000,
-            following = 100
-        ),
-        UserProfile(
-            userId = "user_ed",
-            username = "Ed Sheeran",
-            profileImage = "",
-            bio = "Musician",
-            followers = 1500000,
-            following = 400
+        Post(
+            postId = "2",
+            userId = "user2",
+            username = "Harry Styles",
+            userProfileImage = "",
+            caption = "Love this song so much",
+            imageUrl = "",
+            likes = 567,
+            comments = 23,
+            timestamp = System.currentTimeMillis() - 7200000,
+            music = sampleSongs[1]
         )
     )
 }

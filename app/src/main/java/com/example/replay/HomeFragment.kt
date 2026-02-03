@@ -15,7 +15,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.rvFeed)
 
-        feedAdapter = FeedAdapter(SampleData.posts) { post ->
+        feedAdapter = FeedAdapter(SampleData.samplePosts.toMutableList()) { post ->  // ✅ FIXED: Convert to MutableList
             // Optional: handle post click
         }
 

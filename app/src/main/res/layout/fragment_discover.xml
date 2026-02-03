@@ -1,29 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:fillViewport="true"
+    android:background="?android:attr/colorBackground">
 
-    <!-- 🔍 Search Bar -->
-    <androidx.appcompat.widget.SearchView
-        android:id="@+id/searchView"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:queryHint="Search songs, artists, albums"
-        android:iconifiedByDefault="false"
-        android:background="@drawable/search_bg" />
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <!-- Space -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="12dp" />
+        <!-- Search Bar -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@android:color/white">
 
-    <!-- Discover Content -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvDiscover"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/searchView"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:iconifiedByDefault="false"
+                app:queryHint="Search for songs, artists..."
+                android:background="@android:color/transparent" />
 
-</LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Search Results Section -->
+        <TextView
+            android:id="@+id/searchResultsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="Search Results"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/searchResultsRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="16dp"
+            tools:visibility="visible"
+            tools:listitem="@layout/item_song_vertical" />
+
+        <!-- Featured Artists Section -->
+        <TextView
+            android:id="@+id/featuredArtistsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="Featured Artists"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/featuredArtistsRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:clipToPadding="false"
+            android:paddingStart="0dp"
+            android:paddingEnd="16dp"
+            tools:listitem="@layout/item_artist" />
+
+        <!-- Trending Songs Section -->
+        <TextView
+            android:id="@+id/trendingSongsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Trending Songs"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/trendingSongsRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:clipToPadding="false"
+            android:paddingStart="0dp"
+            android:paddingEnd="16dp"
+            tools:listitem="@layout/item_song_horizontal" />
+
+        <!-- Popular Songs Section -->
+        <TextView
+            android:id="@+id/popularSongsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Popular Songs"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/popularSongsRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:clipToPadding="false"
+            android:paddingStart="0dp"
+            android:paddingEnd="16dp"
+            tools:listitem="@layout/item_song_horizontal" />
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

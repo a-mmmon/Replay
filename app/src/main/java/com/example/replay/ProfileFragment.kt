@@ -18,8 +18,8 @@ import com.google.android.material.tabs.TabLayout
 class ProfileFragment : Fragment() {
 
     private var profileImage: ShapeableImageView? = null
-    private var usernameText: TextView? = null  // ✅ FIXED: Changed from 'username' to 'usernameText'
-    private var handleText: TextView? = null     // ✅ FIXED: Changed from 'handle' to 'handleText'
+    private var usernameText: TextView? = null
+    private var handleText: TextView? = null
     private var followersCount: TextView? = null
     private var followingCount: TextView? = null
     private var streakCount: TextView? = null
@@ -69,8 +69,8 @@ class ProfileFragment : Fragment() {
     private fun initializeViews(view: View) {
         try {
             profileImage = view.findViewById(R.id.profileImage)
-            usernameText = view.findViewById(R.id.usernameText)  // ✅ FIXED
-            handleText = view.findViewById(R.id.handleText)      // ✅ FIXED
+            usernameText = view.findViewById(R.id.usernameText)
+            handleText = view.findViewById(R.id.handleText)
             followersCount = view.findViewById(R.id.followersCount)
             followingCount = view.findViewById(R.id.followingCount)
             streakCount = view.findViewById(R.id.streakCount)
@@ -90,8 +90,8 @@ class ProfileFragment : Fragment() {
             val currentUsername = prefs.getString("username", "uri") ?: "uri"
             val currentHandle = prefs.getString("user_handle", "@$currentUsername") ?: "@$currentUsername"
 
-            usernameText?.text = currentUsername  // ✅ FIXED
-            handleText?.text = currentHandle      // ✅ FIXED
+            usernameText?.text = currentUsername
+            handleText?.text = currentHandle
 
             followersCount?.text = prefs.getInt("followers", 245).toString()
             followingCount?.text = prefs.getInt("following", 189).toString()
@@ -126,10 +126,7 @@ class ProfileFragment : Fragment() {
         try {
             val tabs = tabLayout ?: return
 
-            // Clear existing tabs first
             tabs.removeAllTabs()
-
-            // Add tabs
             tabs.addTab(tabs.newTab().setText("Posts"))
             tabs.addTab(tabs.newTab().setText("Likes"))
 
@@ -179,7 +176,6 @@ class ProfileFragment : Fragment() {
                 .setItems(arrayOf("Edit Profile", "Logout")) { _, which ->
                     when (which) {
                         0 -> {
-                            // Edit profile - implement later
                             Log.d("ProfileFragment", "Edit Profile clicked")
                         }
                         1 -> {
@@ -225,6 +221,22 @@ class ProfileFragment : Fragment() {
                 val timestamp = prefs.getLong("post_${i}_timestamp", 0L)
                 val likes = prefs.getInt("post_${i}_likes", 0)
 
+                // ✅ FIXED: Load music data if it exists
+                val music = if (prefs.contains("post_${i}_music_trackId")) {
+                    ITunesSong(
+                        trackId = prefs.getLong("post_${i}_music_trackId", 0L),
+                        trackName = prefs.getString("post_${i}_music_trackName", "") ?: "",
+                        artistName = prefs.getString("post_${i}_music_artistName", "") ?: "",
+                        artworkUrl100 = prefs.getString("post_${i}_music_artworkUrl", "") ?: "",
+                        previewUrl = prefs.getString("post_${i}_music_previewUrl", "") ?: "",
+                        collectionName = prefs.getString("post_${i}_music_collectionName", "") ?: "",
+                        trackViewUrl = prefs.getString("post_${i}_music_trackViewUrl", "") ?: "",
+                        releaseDate = prefs.getString("post_${i}_music_releaseDate", "") ?: ""
+                    )
+                } else {
+                    null
+                }
+
                 if (postId != null && caption != null) {
                     userPosts.add(
                         Post(
@@ -237,7 +249,7 @@ class ProfileFragment : Fragment() {
                             likes = likes,
                             comments = 0,
                             timestamp = timestamp,
-                            music = null
+                            music = music  // ✅ Include the music
                         )
                     )
                 }

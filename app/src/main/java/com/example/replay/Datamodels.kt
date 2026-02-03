@@ -67,19 +67,3 @@ data class Post(
     val music: ITunesSong? = null
 ) : Parcelable
 
-// ============================================
-// MUSIC DATA CLASSES
-// ============================================
-
-@Parcelize
-data class ITunesSong(
-    val trackId: Long = 0L,
-    val trackName: String = "",
-    val artistName: String = "",
-    val collectionName: String = "",
-    val artworkUrl100: String = "",
-    val previewUrl: String = "",
-    val trackTimeMillis: Long = 0L,
-    val releaseDate: String = "",
-    val primaryGenreName: String = ""
-) : Parcelable
