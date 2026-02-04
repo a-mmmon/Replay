@@ -146,10 +146,10 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun loadInitialContent() {
-        // Load trending songs
+        // Load trending songs (with fallback)
         loadTrendingSongs()
 
-        // Load popular songs
+        // Load popular songs (with fallback)
         loadPopularSongs()
     }
 
@@ -162,14 +162,22 @@ class DiscoverFragment : Fragment() {
                 ) {
                     if (response.isSuccessful) {
                         val results = response.body()?.results ?: emptyList()
-                        trendingSongs.clear()
-                        trendingSongs.addAll(results)
-                        trendingSongsAdapter.notifyDataSetChanged()
+                        if (results.isNotEmpty()) {
+                            trendingSongs.clear()
+                            trendingSongs.addAll(results)
+                            trendingSongsAdapter.notifyDataSetChanged()
+                            Log.d("DiscoverFragment", "Loaded ${results.size} trending songs from API")
+                        } else {
+                            loadFallbackTrendingSongs()
+                        }
+                    } else {
+                        loadFallbackTrendingSongs()
                     }
                 }
 
                 override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
-                    Log.e("DiscoverFragment", "Failed to load trending songs", t)
+                    Log.e("DiscoverFragment", "Failed to load trending songs from API", t)
+                    loadFallbackTrendingSongs()
                 }
             })
     }
@@ -183,16 +191,39 @@ class DiscoverFragment : Fragment() {
                 ) {
                     if (response.isSuccessful) {
                         val results = response.body()?.results ?: emptyList()
-                        popularSongs.clear()
-                        popularSongs.addAll(results)
-                        popularSongsAdapter.notifyDataSetChanged()
+                        if (results.isNotEmpty()) {
+                            popularSongs.clear()
+                            popularSongs.addAll(results)
+                            popularSongsAdapter.notifyDataSetChanged()
+                            Log.d("DiscoverFragment", "Loaded ${results.size} popular songs from API")
+                        } else {
+                            loadFallbackPopularSongs()
+                        }
+                    } else {
+                        loadFallbackPopularSongs()
                     }
                 }
 
                 override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
-                    Log.e("DiscoverFragment", "Failed to load popular songs", t)
+                    Log.e("DiscoverFragment", "Failed to load popular songs from API", t)
+                    loadFallbackPopularSongs()
                 }
             })
+    }
+
+    // ✅ NEW: Fallback sample data when API fails
+    private fun loadFallbackTrendingSongs() {
+        trendingSongs.clear()
+        trendingSongs.addAll(SampleData.sampleSongs)
+        trendingSongsAdapter.notifyDataSetChanged()
+        Log.d("DiscoverFragment", "Loaded ${trendingSongs.size} trending songs from fallback data")
+    }
+
+    private fun loadFallbackPopularSongs() {
+        popularSongs.clear()
+        popularSongs.addAll(SampleData.sampleSongs.reversed()) // Different order
+        popularSongsAdapter.notifyDataSetChanged()
+        Log.d("DiscoverFragment", "Loaded ${popularSongs.size} popular songs from fallback data")
     }
 
     private fun searchSongs(query: String) {
@@ -230,7 +261,7 @@ class DiscoverFragment : Fragment() {
                     t.printStackTrace()
                     Toast.makeText(
                         requireContext(),
-                        t.localizedMessage ?: "Network error",
+                        "Network error: ${t.localizedMessage}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
