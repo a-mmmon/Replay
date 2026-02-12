@@ -32,6 +32,10 @@ class LoginActivity : AppCompatActivity() {
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
 
+        // TEMPORARY FIX: Force sign out to fix navigation issue
+        // Remove this line after you successfully log in again
+        auth.signOut()
+
         // Check if already logged in via Firebase
         if (auth.currentUser != null) {
             navigateToMain()

@@ -42,11 +42,12 @@ data class Message(
 data class UserProfile(
     val userId: String = "",
     val username: String = "",
-    val handle: String = "",                // ✅ ADDED: Handle field (e.g., "@taylorswift")
+    val handle: String = "",
     val profileImage: String = "",
     val bio: String = "",
     val followers: Int = 0,
     val following: Int = 0
+    // NOTE: No-arg constructor is required by Firebase — default values provide this ✅
 ) : Parcelable
 
 // ============================================
@@ -66,4 +67,3 @@ data class Post(
     val timestamp: Long = 0L,
     val music: ITunesSong? = null
 ) : Parcelable
-
