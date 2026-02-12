@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "515998752172",
+    "project_id": "replay-a1769",
+    "storage_bucket": "replay-a1769.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515998752172:android:ceffba271d28963c35ae09",
+        "android_client_info": {
+          "package_name": "com.example.replay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRhKWPBf1mFAzxK3pzGurTUpVDKBvOVuw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
