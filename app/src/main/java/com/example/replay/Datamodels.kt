@@ -42,7 +42,7 @@ data class Message(
 data class UserProfile(
     val userId: String = "",
     val username: String = "",
-    val handle: String = "",                // ✅ ADDED: Handle field (e.g., "@taylorswift")
+    val handle: String = "",
     val profileImage: String = "",
     val bio: String = "",
     val followers: Int = 0,
@@ -63,7 +63,39 @@ data class Post(
     val imageUrl: String = "",
     val likes: Int = 0,
     val comments: Int = 0,
+    val reposts: Int = 0,                    // ✅ NEW: Repost count
     val timestamp: Long = 0L,
-    val music: ITunesSong? = null
+    val music: ITunesSong? = null,
+    val isRepost: Boolean = false,           // ✅ NEW: Is this a repost?
+    val originalPostId: String = "",         // ✅ NEW: Original post ID if reposted
+    val repostedByUsername: String = ""      // ✅ NEW: Who reposted it
 ) : Parcelable
 
+// ============================================
+// COMMENT DATA CLASS
+// ============================================
+
+@Parcelize
+data class Comment(
+    val commentId: String = "",
+    val postId: String = "",
+    val userId: String = "",
+    val username: String = "",
+    val userProfileImage: String = "",
+    val commentText: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+) : Parcelable
+
+// ============================================
+// REPOST DATA CLASS
+// ============================================
+
+@Parcelize
+data class Repost(
+    val repostId: String = "",
+    val originalPostId: String = "",
+    val originalUserId: String = "",
+    val repostedByUserId: String = "",
+    val repostedByUsername: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+) : Parcelable

@@ -108,7 +108,6 @@ class ProfileFragment : Fragment() {
             val recyclerView = postsRecyclerView ?: return
 
             postsAdapter = FeedAdapter(userPosts) { post ->
-                // Handle post click
                 Log.d("ProfileFragment", "Post clicked: ${post.postId}")
             }
             recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -128,6 +127,7 @@ class ProfileFragment : Fragment() {
 
             tabs.removeAllTabs()
             tabs.addTab(tabs.newTab().setText("Posts"))
+            tabs.addTab(tabs.newTab().setText("Reposts"))  // ✅ NEW: Reposts tab
             tabs.addTab(tabs.newTab().setText("Likes"))
 
             tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -139,6 +139,10 @@ class ProfileFragment : Fragment() {
                                 loadUserPosts()
                             }
                             1 -> {
+                                Log.d("ProfileFragment", "Reposts tab selected")
+                                loadUserReposts()  // ✅ NEW
+                            }
+                            2 -> {
                                 Log.d("ProfileFragment", "Likes tab selected")
                                 loadUserLikes()
                             }
@@ -221,7 +225,6 @@ class ProfileFragment : Fragment() {
                 val timestamp = prefs.getLong("post_${i}_timestamp", 0L)
                 val likes = prefs.getInt("post_${i}_likes", 0)
 
-                // ✅ FIXED: Load music data if it exists
                 val music = if (prefs.contains("post_${i}_music_trackId")) {
                     ITunesSong(
                         trackId = prefs.getLong("post_${i}_music_trackId", 0L),
@@ -248,8 +251,12 @@ class ProfileFragment : Fragment() {
                             imageUrl = "",
                             likes = likes,
                             comments = 0,
+                            reposts = 0,
                             timestamp = timestamp,
-                            music = music  // ✅ Include the music
+                            music = music,
+                            isRepost = false,
+                            originalPostId = "",
+                            repostedByUsername = ""
                         )
                     )
                 }
@@ -268,6 +275,74 @@ class ProfileFragment : Fragment() {
             Log.d("ProfileFragment", "Loaded ${userPosts.size} user posts")
         } catch (e: Exception) {
             Log.e("ProfileFragment", "Error loading user posts", e)
+        }
+    }
+
+    // ✅ NEW: Load user's reposts
+    private fun loadUserReposts() {
+        try {
+            val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            val currentUsername = prefs.getString("username", "uri") ?: "uri"
+
+            userPosts.clear()
+
+            val repostCount = prefs.getInt("repost_count", 0)
+            Log.d("ProfileFragment", "Loading $repostCount reposts")
+
+            for (i in 0 until repostCount) {
+                val postId = prefs.getString("repost_${i}_id", null)
+                val originalPostId = prefs.getString("repost_${i}_original_post_id", null)
+                val username = prefs.getString("repost_${i}_username", null)
+                val caption = prefs.getString("repost_${i}_caption", null)
+                val timestamp = prefs.getLong("repost_${i}_timestamp", 0L)
+                val likes = prefs.getInt("repost_${i}_likes", 0)
+                val comments = prefs.getInt("repost_${i}_comments", 0)
+
+                val music = if (prefs.contains("repost_${i}_music_trackId")) {
+                    ITunesSong(
+                        trackId = prefs.getLong("repost_${i}_music_trackId", 0L),
+                        trackName = prefs.getString("repost_${i}_music_trackName", "") ?: "",
+                        artistName = prefs.getString("repost_${i}_music_artistName", "") ?: "",
+                        artworkUrl100 = prefs.getString("repost_${i}_music_artworkUrl", "") ?: "",
+                        previewUrl = "",
+                        collectionName = "",
+                        trackViewUrl = "",
+                        releaseDate = ""
+                    )
+                } else {
+                    null
+                }
+
+                if (postId != null && caption != null && username != null && originalPostId != null) {
+                    userPosts.add(
+                        Post(
+                            postId = originalPostId,
+                            userId = "other_user",
+                            username = username,
+                            userProfileImage = "",
+                            caption = caption,
+                            imageUrl = "",
+                            likes = likes,
+                            comments = comments,
+                            reposts = 0,
+                            timestamp = timestamp,
+                            music = music,
+                            isRepost = true,  // ✅ Mark as repost
+                            originalPostId = originalPostId,
+                            repostedByUsername = currentUsername  // ✅ Show who reposted
+                        )
+                    )
+                }
+            }
+
+            postsAdapter?.notifyDataSetChanged()
+
+            val repostsTab = tabLayout?.getTabAt(1)
+            repostsTab?.text = "Reposts (${userPosts.size})"
+
+            Log.d("ProfileFragment", "Loaded ${userPosts.size} reposts")
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Error loading reposts", e)
         }
     }
 
@@ -294,8 +369,12 @@ class ProfileFragment : Fragment() {
                 imageUrl = "",
                 likes = 42,
                 comments = 8,
+                reposts = 0,
                 timestamp = System.currentTimeMillis() - 3600000,
-                music = null
+                music = null,
+                isRepost = false,
+                originalPostId = "",
+                repostedByUsername = ""
             )
         )
     }
@@ -311,8 +390,12 @@ class ProfileFragment : Fragment() {
                 imageUrl = "",
                 likes = 5,
                 comments = 2,
+                reposts = 0,
                 timestamp = System.currentTimeMillis() - 10800000,
-                music = null
+                music = null,
+                isRepost = false,
+                originalPostId = "",
+                repostedByUsername = ""
             ),
             Post(
                 postId = "liked_2",
@@ -323,8 +406,12 @@ class ProfileFragment : Fragment() {
                 imageUrl = "",
                 likes = 1000,
                 comments = 150,
+                reposts = 0,
                 timestamp = System.currentTimeMillis() - 3600000,
-                music = null
+                music = null,
+                isRepost = false,
+                originalPostId = "",
+                repostedByUsername = ""
             ),
             Post(
                 postId = "liked_3",
@@ -335,8 +422,12 @@ class ProfileFragment : Fragment() {
                 imageUrl = "",
                 likes = 2000,
                 comments = 200,
+                reposts = 0,
                 timestamp = System.currentTimeMillis() - 86400000,
-                music = null
+                music = null,
+                isRepost = false,
+                originalPostId = "",
+                repostedByUsername = ""
             )
         )
     }

@@ -49,7 +49,13 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <!-- ✅ ADD THIS - COMMENT ACTIVITY -->
+        <activity
+            android:name=".CommentActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 
 </manifest>
-
