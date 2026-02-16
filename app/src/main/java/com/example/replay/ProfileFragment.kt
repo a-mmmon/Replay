@@ -14,6 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.tabs.TabLayout
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class ProfileFragment : Fragment() {
 
@@ -30,6 +35,10 @@ class ProfileFragment : Fragment() {
     private var postsAdapter: FeedAdapter? = null
     private val userPosts = mutableListOf<Post>()
 
+    // Firebase
+    private val auth = FirebaseAuth.getInstance()
+    private val database = FirebaseDatabase.getInstance()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -45,10 +54,9 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         try {
             initializeViews(view)
-            loadUserProfile()
+            loadUserProfileFromFirebase()  // ← Firebase instead of SharedPreferences
             setupRecyclerView()
             setupTabs()
             setupSettingsButton()
@@ -67,32 +75,27 @@ class ProfileFragment : Fragment() {
     }
 
     private fun initializeViews(view: View) {
-        try {
-            profileImage = view.findViewById(R.id.profileImage)
-            usernameText = view.findViewById(R.id.usernameText)
-            handleText = view.findViewById(R.id.handleText)
-            followersCount = view.findViewById(R.id.followersCount)
-            followingCount = view.findViewById(R.id.followingCount)
-            streakCount = view.findViewById(R.id.streakCount)
-            postsRecyclerView = view.findViewById(R.id.postsRecyclerView)
-            tabLayout = view.findViewById(R.id.tabLayout)
-            settingsButton = view.findViewById(R.id.settingsButton)
-
-            Log.d("ProfileFragment", "All views initialized successfully")
-        } catch (e: Exception) {
-            Log.e("ProfileFragment", "Error finding views", e)
-        }
+        profileImage = view.findViewById(R.id.profileImage)
+        usernameText = view.findViewById(R.id.usernameText)
+        handleText = view.findViewById(R.id.handleText)
+        followersCount = view.findViewById(R.id.followersCount)
+        followingCount = view.findViewById(R.id.followingCount)
+        streakCount = view.findViewById(R.id.streakCount)
+        postsRecyclerView = view.findViewById(R.id.postsRecyclerView)
+        tabLayout = view.findViewById(R.id.tabLayout)
+        settingsButton = view.findViewById(R.id.settingsButton)
     }
 
-    private fun loadUserProfile() {
-        try {
-            val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-            val currentUsername = prefs.getString("username", "uri") ?: "uri"
-            val currentHandle = prefs.getString("user_handle", "@$currentUsername") ?: "@$currentUsername"
+    // ─── FIREBASE: Load profile from Realtime Database ───────────────────────
+    private fun loadUserProfileFromFirebase() {
+        val userId = auth.currentUser?.uid ?: return
 
-            usernameText?.text = currentUsername
-            handleText?.text = currentHandle
+        database.getReference("users").child(userId)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return  // Fragment might be detached
 
+<<<<<<< HEAD
             followersCount?.text = prefs.getInt("followers", 245).toString()
             followingCount?.text = prefs.getInt("following", 189).toString()
             streakCount?.text = prefs.getInt("streak", 5).toString()
@@ -149,82 +152,113 @@ class ProfileFragment : Fragment() {
                         }
                     } catch (e: Exception) {
                         Log.e("ProfileFragment", "Error in tab selection", e)
+=======
+                    val profile = snapshot.getValue(UserProfile::class.java)
+                    if (profile != null) {
+                        usernameText?.text = profile.username.ifEmpty { "User" }
+                        handleText?.text = profile.handle.ifEmpty { "@user" }
+                        followersCount?.text = profile.followers.toString()
+                        followingCount?.text = profile.following.toString()
+                        Log.d("ProfileFragment", "Profile loaded from Firebase: ${profile.username}")
+                    } else {
+                        // No profile in DB yet — use email as fallback
+                        val email = auth.currentUser?.email ?: "user@email.com"
+                        val fallbackName = email.substringBefore("@")
+                        usernameText?.text = fallbackName
+                        handleText?.text = "@$fallbackName"
+                        Log.d("ProfileFragment", "No profile found, using email fallback")
+>>>>>>> f0fea5a1609fa79ffb3f84f2e2bf2bfd1a0e7cd7
                     }
                 }
 
-                override fun onTabUnselected(tab: TabLayout.Tab?) {}
-                override fun onTabReselected(tab: TabLayout.Tab?) {}
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ProfileFragment", "Failed to load profile: ${error.message}")
+                }
             })
+    }
 
-            Log.d("ProfileFragment", "Tabs setup complete")
-        } catch (e: Exception) {
-            Log.e("ProfileFragment", "Error setting up tabs", e)
+    private fun setupRecyclerView() {
+        val recyclerView = postsRecyclerView ?: return
+        postsAdapter = FeedAdapter(userPosts) { post ->
+            Log.d("ProfileFragment", "Post clicked: ${post.postId}")
         }
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.adapter = postsAdapter
+        loadUserPosts()
+    }
+
+    private fun setupTabs() {
+        val tabs = tabLayout ?: return
+        tabs.removeAllTabs()
+        tabs.addTab(tabs.newTab().setText("Posts"))
+        tabs.addTab(tabs.newTab().setText("Likes"))
+
+        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.position) {
+                    0 -> loadUserPosts()
+                    1 -> loadUserLikes()
+                }
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
     }
 
     private fun setupSettingsButton() {
-        try {
-            settingsButton?.setOnClickListener {
-                showSettingsMenu()
-            }
-            Log.d("ProfileFragment", "Settings button setup complete")
-        } catch (e: Exception) {
-            Log.e("ProfileFragment", "Error setting up settings button", e)
+        settingsButton?.setOnClickListener {
+            showSettingsMenu()
         }
     }
 
     private fun showSettingsMenu() {
-        try {
-            android.app.AlertDialog.Builder(requireContext())
-                .setTitle("Settings")
-                .setItems(arrayOf("Edit Profile", "Logout")) { _, which ->
-                    when (which) {
-                        0 -> {
-                            Log.d("ProfileFragment", "Edit Profile clicked")
-                        }
-                        1 -> {
-                            performLogout()
-                        }
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Settings")
+            .setItems(arrayOf("Edit Profile", "Logout")) { _, which ->
+                when (which) {
+                    0 -> {
+                        startActivity(Intent(requireContext(), EditProfileActivity::class.java))
                     }
+                    1 -> performLogout()
                 }
-                .show()
-        } catch (e: Exception) {
-            Log.e("ProfileFragment", "Error showing settings menu", e)
-        }
+            }
+            .show()
     }
 
+    // ─── FIREBASE: Sign out ───────────────────────────────────────────────────
     private fun performLogout() {
-        try {
-            val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-            prefs.edit().putBoolean("is_logged_in", false).apply()
-
-            val intent = Intent(requireContext(), LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            requireActivity().finish()
-
-            Log.d("ProfileFragment", "Logout successful")
-        } catch (e: Exception) {
-            Log.e("ProfileFragment", "Error performing logout", e)
-        }
+        auth.signOut()
+        val intent = Intent(requireContext(), LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        requireActivity().finish()
+        Log.d("ProfileFragment", "Logged out via Firebase")
     }
 
+    // ─── FIREBASE: Load posts from Realtime Database ─────────────────────────
     private fun loadUserPosts() {
-        try {
-            val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-            val currentUsername = prefs.getString("username", "uri") ?: "uri"
+        val userId = auth.currentUser?.uid ?: return
 
-            userPosts.clear()
+        database.getReference("posts")
+            .orderByChild("userId")
+            .equalTo(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return
+                    userPosts.clear()
 
-            val postCount = prefs.getInt("post_count", 0)
-            Log.d("ProfileFragment", "Loading $postCount posts")
+                    for (child in snapshot.children) {
+                        val post = child.getValue(Post::class.java)
+                        post?.let { userPosts.add(it) }
+                    }
 
-            for (i in 0 until postCount) {
-                val postId = prefs.getString("post_${i}_id", null)
-                val caption = prefs.getString("post_${i}_caption", null)
-                val timestamp = prefs.getLong("post_${i}_timestamp", 0L)
-                val likes = prefs.getInt("post_${i}_likes", 0)
+                    // Show sample post if no real posts yet
+                    if (userPosts.isEmpty()) {
+                        val username = usernameText?.text?.toString() ?: "User"
+                        userPosts.addAll(getSampleUserPosts(username))
+                    }
 
+<<<<<<< HEAD
                 val music = if (prefs.contains("post_${i}_music_trackId")) {
                     ITunesSong(
                         trackId = prefs.getLong("post_${i}_music_trackId", 0L),
@@ -259,23 +293,17 @@ class ProfileFragment : Fragment() {
                             repostedByUsername = ""
                         )
                     )
+=======
+                    postsAdapter?.notifyDataSetChanged()
+                    tabLayout?.getTabAt(0)?.text = "Posts (${userPosts.size})"
+                    Log.d("ProfileFragment", "Loaded ${userPosts.size} posts")
                 }
-            }
 
-            if (userPosts.isEmpty()) {
-                userPosts.addAll(getSampleUserPosts(currentUsername))
-                Log.d("ProfileFragment", "Loaded sample posts")
-            }
-
-            postsAdapter?.notifyDataSetChanged()
-
-            val postsTab = tabLayout?.getTabAt(0)
-            postsTab?.text = "Posts (${userPosts.size})"
-
-            Log.d("ProfileFragment", "Loaded ${userPosts.size} user posts")
-        } catch (e: Exception) {
-            Log.e("ProfileFragment", "Error loading user posts", e)
-        }
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ProfileFragment", "Failed to load posts: ${error.message}")
+>>>>>>> f0fea5a1609fa79ffb3f84f2e2bf2bfd1a0e7cd7
+                }
+            })
     }
 
     // ✅ NEW: Load user's reposts
@@ -347,22 +375,16 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadUserLikes() {
-        try {
-            userPosts.clear()
-            userPosts.addAll(getSampleLikedPosts())
-            postsAdapter?.notifyDataSetChanged()
-
-            Log.d("ProfileFragment", "Loaded ${userPosts.size} liked posts")
-        } catch (e: Exception) {
-            Log.e("ProfileFragment", "Error loading user likes", e)
-        }
+        userPosts.clear()
+        userPosts.addAll(getSampleLikedPosts())
+        postsAdapter?.notifyDataSetChanged()
     }
 
     private fun getSampleUserPosts(username: String): List<Post> {
         return listOf(
             Post(
                 postId = "sample_1",
-                userId = "current_user",
+                userId = auth.currentUser?.uid ?: "current_user",
                 username = username,
                 userProfileImage = "",
                 caption = "Just shared my favorite playlist! 🎵",

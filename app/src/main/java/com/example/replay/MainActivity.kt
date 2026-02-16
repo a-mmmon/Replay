@@ -6,22 +6,25 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var fabPost: FloatingActionButton
 
+    // Firebase Auth instance
+    private lateinit var auth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ CHECK IF USER IS LOGGED IN FIRST
-        val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        val isLoggedIn = prefs.getBoolean("is_logged_in", false)
+        // Initialize Firebase Auth
+        auth = FirebaseAuth.getInstance()
 
-        if (!isLoggedIn) {
+        // Check if user is logged in via Firebase
+        if (auth.currentUser == null) {
             // Not logged in, redirect to login
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
@@ -48,7 +51,7 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.nav_home -> {
                     loadFragment(HomeFragment())
-                    fabPost.show() // Show FAB only on home
+                    fabPost.show()
                     true
                 }
 
@@ -85,5 +88,12 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, fragment)
             .commit()
+    }
+
+    // Call this from ProfileFragment when user taps "Log Out"
+    fun signOut() {
+        auth.signOut()
+        startActivity(Intent(this, LoginActivity::class.java))
+        finish()
     }
 }
