@@ -1,6 +1,7 @@
 package com.example.replay
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
@@ -8,6 +9,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ServerValue
 
 class ConversationActivity : AppCompatActivity() {
 
@@ -19,25 +26,28 @@ class ConversationActivity : AppCompatActivity() {
     private lateinit var sendButton: ImageButton
     private lateinit var messagesAdapter: ConversationMessagesAdapter
 
+    private val auth = FirebaseAuth.getInstance()
+    private val database = FirebaseDatabase.getInstance()
+    private val currentUserId get() = auth.currentUser?.uid ?: ""
+
     private var otherUserId: String = ""
     private var otherUserName: String = ""
-    private var conversationId: String? = null
+    private var conversationId: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_conversation)
 
-        // Get data from intent
         otherUserId = intent.getStringExtra("other_user_id") ?: ""
         otherUserName = intent.getStringExtra("other_user_name") ?: ""
         conversationId = intent.getStringExtra("conversation_id")
-        val otherUserImage = intent.getStringExtra("other_user_image") ?: ""
+            ?: listOf(currentUserId, otherUserId).sorted().joinToString("_")
 
         initializeViews()
         setupToolbar()
         setupRecyclerView()
         setupSendButton()
-        loadMessages()
+        listenToMessages()  // ← Real-time Firebase listener
     }
 
     private fun initializeViews() {
@@ -51,17 +61,11 @@ class ConversationActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         userName.text = otherUserName
-
-        backButton.setOnClickListener {
-            finish()
-        }
-
-        // Load profile image if you're using Glide
-        // Glide.with(this).load(otherUserImage).into(profileImage)
+        backButton.setOnClickListener { finish() }
     }
 
     private fun setupRecyclerView() {
-        messagesAdapter = ConversationMessagesAdapter(emptyList(), getCurrentUserId())
+        messagesAdapter = ConversationMessagesAdapter(mutableListOf(), currentUserId)
         messagesRecyclerView.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }
@@ -69,97 +73,93 @@ class ConversationActivity : AppCompatActivity() {
     }
 
     private fun setupSendButton() {
-        sendButton.setOnClickListener {
-            sendMessage()
-        }
+        sendButton.setOnClickListener { sendMessage() }
     }
 
+    // ─── FIREBASE: Send message ───────────────────────────────────────────────
     private fun sendMessage() {
         val text = messageInput.text.toString().trim()
+        if (text.isEmpty()) return
 
-        if (text.isEmpty()) {
-            return
-        }
+        val messageId = database.getReference("messages").child(conversationId).push().key ?: return
 
-        val message = Message(
-            messageId = System.currentTimeMillis().toString(),  // ✅ FIXED: Changed from 'id' to 'messageId'
-            senderId = getCurrentUserId(),
-            receiverId = otherUserId,
-            text = text,
-            timestamp = System.currentTimeMillis(),
-            isRead = false
+        val message = mapOf(
+            "messageId" to messageId,
+            "senderId" to currentUserId,
+            "receiverId" to otherUserId,
+            "text" to text,
+            "timestamp" to ServerValue.TIMESTAMP,
+            "isRead" to false
         )
 
-        // Save message to database
-        saveMessage(message)
-
-        // Add to adapter
-        messagesAdapter.addMessage(message)
-
-        // Clear input
-        messageInput.text.clear()
-
-        // Scroll to bottom
-        messagesRecyclerView.scrollToPosition(messagesAdapter.itemCount - 1)
+        // Save message
+        database.getReference("messages").child(conversationId).child(messageId)
+            .setValue(message)
+            .addOnSuccessListener {
+                messageInput.text.clear()
+                updateConversationForBothUsers(text)
+                Log.d("ConversationActivity", "Message sent: $messageId")
+            }
+            .addOnFailureListener { e ->
+                Log.e("ConversationActivity", "Failed to send message: ${e.message}")
+            }
     }
 
-    private fun loadMessages() {
-        // Load messages from your data source
-        val messages = getMessagesFromDataSource()
-        messagesAdapter.updateMessages(messages)
+    // ─── FIREBASE: Update conversation list for both users ───────────────────
+    private fun updateConversationForBothUsers(lastMessage: String) {
+        val timestamp = System.currentTimeMillis()
 
-        if (messages.isNotEmpty()) {
-            messagesRecyclerView.scrollToPosition(messages.size - 1)
-        }
-    }
+        // Get current user's profile to save in other user's conversation
+        database.getReference("users").child(currentUserId).get()
+            .addOnSuccessListener { snapshot ->
+                val myProfile = snapshot.getValue(UserProfile::class.java)
+                val myName = myProfile?.username ?: auth.currentUser?.email?.substringBefore("@") ?: "User"
 
-    private fun getCurrentUserId(): String {
-        // Get current user ID from your auth system
-        return "current_user_id"
-    }
-
-    private fun saveMessage(message: Message) {
-        // Save to your database/backend
-        // This could be Room, Firebase, or REST API
-
-        // If it's a new conversation, create conversation ID
-        if (conversationId == null) {
-            conversationId = createConversation(otherUserId)
-        }
-    }
-
-    private fun createConversation(otherUserId: String): String {
-        // Create a new conversation in your database
-        // Return the conversation ID
-        return "conversation_${System.currentTimeMillis()}"
-    }
-
-    private fun getMessagesFromDataSource(): List<Message> {
-        // Replace with actual data loading logic
-        // Load from Room database, Firebase, or REST API
-
-        // Sample data for demonstration
-        return if (conversationId != null) {
-            listOf(
-                Message(
-                    messageId = "1",  // ✅ FIXED: Changed from 'id' to 'messageId'
-                    senderId = otherUserId,
-                    receiverId = getCurrentUserId(),
-                    text = "Hey! How are you?",
-                    timestamp = System.currentTimeMillis() - 3600000,
-                    isRead = true
-                ),
-                Message(
-                    messageId = "2",  // ✅ FIXED: Changed from 'id' to 'messageId'
-                    senderId = getCurrentUserId(),
-                    receiverId = otherUserId,
-                    text = "I'm great! Just discovered some amazing new music!",
-                    timestamp = System.currentTimeMillis() - 3500000,
-                    isRead = true
+                // Update MY conversation entry (shows other user's info)
+                val myConversation = mapOf(
+                    "conversationId" to conversationId,
+                    "otherUserId" to otherUserId,
+                    "otherUserName" to otherUserName,
+                    "otherUserProfileImage" to "",
+                    "lastMessage" to lastMessage,
+                    "timestamp" to timestamp,
+                    "unreadBadge" to 0
                 )
-            )
-        } else {
-            emptyList()
-        }
+                database.getReference("conversations").child(currentUserId)
+                    .child(conversationId).setValue(myConversation)
+
+                // Update OTHER USER's conversation entry (shows my info)
+                val theirConversation = mapOf(
+                    "conversationId" to conversationId,
+                    "otherUserId" to currentUserId,
+                    "otherUserName" to myName,
+                    "otherUserProfileImage" to (myProfile?.profileImage ?: ""),
+                    "lastMessage" to lastMessage,
+                    "timestamp" to timestamp,
+                    "unreadBadge" to 1
+                )
+                database.getReference("conversations").child(otherUserId)
+                    .child(conversationId).setValue(theirConversation)
+            }
+    }
+
+    // ─── FIREBASE: Listen to messages in real-time ───────────────────────────
+    private fun listenToMessages() {
+        database.getReference("messages").child(conversationId)
+            .orderByChild("timestamp")
+            .addChildEventListener(object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    val message = snapshot.getValue(Message::class.java) ?: return
+                    messagesAdapter.addMessage(message)
+                    messagesRecyclerView.scrollToPosition(messagesAdapter.itemCount - 1)
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onChildRemoved(snapshot: DataSnapshot) {}
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ConversationActivity", "Failed to load messages: ${error.message}")
+                }
+            })
     }
 }

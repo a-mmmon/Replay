@@ -11,6 +11,10 @@ import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -41,6 +45,9 @@ class DiscoverFragment : Fragment() {
     private lateinit var featuredArtistsHeader: TextView
     private lateinit var trendingSongsHeader: TextView
     private lateinit var popularSongsHeader: TextView
+
+    // Firebase
+    private val database = FirebaseDatabase.getInstance()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -146,14 +153,42 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun loadInitialContent() {
-        // Load trending songs (with fallback)
-        loadTrendingSongs()
-
-        // Load popular songs (with fallback)
-        loadPopularSongs()
+        // Try loading from Firebase first, then from API
+        loadTrendingSongsFromFirebase()
+        loadPopularSongsFromFirebase()
     }
 
-    private fun loadTrendingSongs() {
+    // ✅ NEW: Load trending songs from Firebase (cached from previous searches)
+    private fun loadTrendingSongsFromFirebase() {
+        database.getReference("trending-songs")
+            .limitToFirst(20)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val firebaseSongs = mutableListOf<ITunesSong>()
+                    for (child in snapshot.children) {
+                        val song = child.getValue(ITunesSong::class.java)
+                        song?.let { firebaseSongs.add(it) }
+                    }
+
+                    if (firebaseSongs.isNotEmpty()) {
+                        trendingSongs.clear()
+                        trendingSongs.addAll(firebaseSongs)
+                        trendingSongsAdapter.notifyDataSetChanged()
+                        Log.d("DiscoverFragment", "Loaded ${firebaseSongs.size} trending songs from Firebase")
+                    } else {
+                        // No cached songs, fetch from API
+                        loadTrendingSongsFromAPI()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("DiscoverFragment", "Firebase error: ${error.message}")
+                    loadTrendingSongsFromAPI()
+                }
+            })
+    }
+
+    private fun loadTrendingSongsFromAPI() {
         RetrofitClient.api.searchSongs("trending 2024", limit = 20)
             .enqueue(object : Callback<ITunesResponse> {
                 override fun onResponse(
@@ -166,6 +201,9 @@ class DiscoverFragment : Fragment() {
                             trendingSongs.clear()
                             trendingSongs.addAll(results)
                             trendingSongsAdapter.notifyDataSetChanged()
+
+                            // Cache to Firebase
+                            cacheSongsToFirebase("trending-songs", results)
                             Log.d("DiscoverFragment", "Loaded ${results.size} trending songs from API")
                         } else {
                             loadFallbackTrendingSongs()
@@ -182,7 +220,36 @@ class DiscoverFragment : Fragment() {
             })
     }
 
-    private fun loadPopularSongs() {
+    // ✅ NEW: Load popular songs from Firebase
+    private fun loadPopularSongsFromFirebase() {
+        database.getReference("popular-songs")
+            .limitToFirst(20)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val firebaseSongs = mutableListOf<ITunesSong>()
+                    for (child in snapshot.children) {
+                        val song = child.getValue(ITunesSong::class.java)
+                        song?.let { firebaseSongs.add(it) }
+                    }
+
+                    if (firebaseSongs.isNotEmpty()) {
+                        popularSongs.clear()
+                        popularSongs.addAll(firebaseSongs)
+                        popularSongsAdapter.notifyDataSetChanged()
+                        Log.d("DiscoverFragment", "Loaded ${firebaseSongs.size} popular songs from Firebase")
+                    } else {
+                        loadPopularSongsFromAPI()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("DiscoverFragment", "Firebase error: ${error.message}")
+                    loadPopularSongsFromAPI()
+                }
+            })
+    }
+
+    private fun loadPopularSongsFromAPI() {
         RetrofitClient.api.searchSongs("pop hits 2024", limit = 20)
             .enqueue(object : Callback<ITunesResponse> {
                 override fun onResponse(
@@ -195,6 +262,9 @@ class DiscoverFragment : Fragment() {
                             popularSongs.clear()
                             popularSongs.addAll(results)
                             popularSongsAdapter.notifyDataSetChanged()
+
+                            // Cache to Firebase
+                            cacheSongsToFirebase("popular-songs", results)
                             Log.d("DiscoverFragment", "Loaded ${results.size} popular songs from API")
                         } else {
                             loadFallbackPopularSongs()
@@ -211,7 +281,20 @@ class DiscoverFragment : Fragment() {
             })
     }
 
-    // ✅ NEW: Fallback sample data when API fails
+    // ✅ NEW: Cache songs to Firebase for offline access
+    private fun cacheSongsToFirebase(category: String, songs: List<ITunesSong>) {
+        val ref = database.getReference(category)
+
+        // Clear old cache
+        ref.removeValue().addOnSuccessListener {
+            // Add new songs
+            songs.forEach { song ->
+                ref.child(song.trackId.toString()).setValue(song)
+            }
+            Log.d("DiscoverFragment", "Cached ${songs.size} songs to Firebase/$category")
+        }
+    }
+
     private fun loadFallbackTrendingSongs() {
         trendingSongs.clear()
         trendingSongs.addAll(SampleData.sampleSongs)
@@ -221,7 +304,7 @@ class DiscoverFragment : Fragment() {
 
     private fun loadFallbackPopularSongs() {
         popularSongs.clear()
-        popularSongs.addAll(SampleData.sampleSongs.reversed()) // Different order
+        popularSongs.addAll(SampleData.sampleSongs.reversed())
         popularSongsAdapter.notifyDataSetChanged()
         Log.d("DiscoverFragment", "Loaded ${popularSongs.size} popular songs from fallback data")
     }
@@ -281,18 +364,26 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun addToFavorites(song: ITunesSong) {
-        try {
-            val prefs = requireContext().getSharedPreferences("favorites", android.content.Context.MODE_PRIVATE)
-            val favorites = prefs.getStringSet("favorite_songs", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        // Save to local favorites manager
+        FavoriteManager.addToFavorites(song)
 
-            val songData = "${song.trackId}|${song.trackName}|${song.artistName}|${song.artworkUrl100}"
-            favorites.add(songData)
-
-            prefs.edit().putStringSet("favorite_songs", favorites).apply()
-
+        // Also save to Firebase for cloud sync
+        val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            database.getReference("user-library")
+                .child(userId)
+                .child("favorites")
+                .child(song.trackId.toString())
+                .setValue(song)
+                .addOnSuccessListener {
+                    Toast.makeText(requireContext(), "Added to favorites!", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { e ->
+                    Log.e("DiscoverFragment", "Failed to save to Firebase", e)
+                    Toast.makeText(requireContext(), "Added to local favorites", Toast.LENGTH_SHORT).show()
+                }
+        } else {
             Toast.makeText(requireContext(), "Added to favorites!", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Log.e("DiscoverFragment", "Error adding to favorites", e)
         }
     }
 

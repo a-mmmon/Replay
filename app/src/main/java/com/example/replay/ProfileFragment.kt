@@ -1,6 +1,5 @@
 package com.example.replay
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -56,7 +55,7 @@ class ProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         try {
             initializeViews(view)
-            loadUserProfileFromFirebase()  // ← Firebase instead of SharedPreferences
+            loadUserProfileFromFirebase()
             setupRecyclerView()
             setupTabs()
             setupSettingsButton()
@@ -86,29 +85,32 @@ class ProfileFragment : Fragment() {
         settingsButton = view.findViewById(R.id.settingsButton)
     }
 
-    // ─── FIREBASE: Load profile from Realtime Database ───────────────────────
     private fun loadUserProfileFromFirebase() {
         val userId = auth.currentUser?.uid ?: return
 
         database.getReference("users").child(userId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!isAdded) return  // Fragment might be detached
+                    if (!isAdded) return
 
                     val profile = snapshot.getValue(UserProfile::class.java)
                     if (profile != null) {
                         usernameText?.text = profile.username.ifEmpty { "User" }
-                        handleText?.text = profile.handle.ifEmpty { "@user" }
+
+                        // Handle might be missing, generate from username or email
+                        val handle = if (profile.handle.isNotEmpty()) {
+                            profile.handle
+                        } else {
+                            "@${profile.username.ifEmpty { auth.currentUser?.email?.substringBefore("@") ?: "user" }}"
+                        }
+                        handleText?.text = handle
+
                         followersCount?.text = profile.followers.toString()
                         followingCount?.text = profile.following.toString()
                         Log.d("ProfileFragment", "Profile loaded from Firebase: ${profile.username}")
                     } else {
-                        // No profile in DB yet — use email as fallback
-                        val email = auth.currentUser?.email ?: "user@email.com"
-                        val fallbackName = email.substringBefore("@")
-                        usernameText?.text = fallbackName
-                        handleText?.text = "@$fallbackName"
-                        Log.d("ProfileFragment", "No profile found, using email fallback")
+                        // No profile in DB yet — create one
+                        createUserProfile(userId)
                     }
                 }
 
@@ -118,11 +120,42 @@ class ProfileFragment : Fragment() {
             })
     }
 
+    private fun createUserProfile(userId: String) {
+        val email = auth.currentUser?.email ?: "user@email.com"
+        val username = email.substringBefore("@")
+
+        val newProfile = UserProfile(
+            userId = userId,
+            username = username,
+            handle = "@$username",
+            email = email,
+            bio = "",
+            profileImage = "",
+            followers = 0,
+            following = 0
+        )
+
+        database.getReference("users").child(userId).setValue(newProfile)
+            .addOnSuccessListener {
+                Log.d("ProfileFragment", "User profile created: $username")
+                usernameText?.text = username
+                handleText?.text = "@$username"
+            }
+            .addOnFailureListener { e ->
+                Log.e("ProfileFragment", "Failed to create profile", e)
+                usernameText?.text = username
+                handleText?.text = "@$username"
+            }
+    }
+
     private fun setupRecyclerView() {
         val recyclerView = postsRecyclerView ?: return
-        postsAdapter = FeedAdapter(userPosts) { post ->
+
+        // ✅ FIXED: Provide the onPostClick callback with named parameter
+        postsAdapter = FeedAdapter(userPosts, onPostClick = { post ->
             Log.d("ProfileFragment", "Post clicked: ${post.postId}")
-        }
+        })
+
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = postsAdapter
         loadUserPosts()
@@ -166,7 +199,6 @@ class ProfileFragment : Fragment() {
             .show()
     }
 
-    // ─── FIREBASE: Sign out ───────────────────────────────────────────────────
     private fun performLogout() {
         auth.signOut()
         val intent = Intent(requireContext(), LoginActivity::class.java)
@@ -176,7 +208,6 @@ class ProfileFragment : Fragment() {
         Log.d("ProfileFragment", "Logged out via Firebase")
     }
 
-    // ─── FIREBASE: Load posts from Realtime Database ─────────────────────────
     private fun loadUserPosts() {
         val userId = auth.currentUser?.uid ?: return
 
@@ -193,11 +224,8 @@ class ProfileFragment : Fragment() {
                         post?.let { userPosts.add(it) }
                     }
 
-                    // Show sample post if no real posts yet
-                    if (userPosts.isEmpty()) {
-                        val username = usernameText?.text?.toString() ?: "User"
-                        userPosts.addAll(getSampleUserPosts(username))
-                    }
+                    // Sort by timestamp (newest first)
+                    userPosts.sortByDescending { it.timestamp }
 
                     postsAdapter?.notifyDataSetChanged()
                     tabLayout?.getTabAt(0)?.text = "Posts (${userPosts.size})"
@@ -212,65 +240,8 @@ class ProfileFragment : Fragment() {
 
     private fun loadUserLikes() {
         userPosts.clear()
-        userPosts.addAll(getSampleLikedPosts())
+        // TODO: Load actual liked posts from Firebase
         postsAdapter?.notifyDataSetChanged()
-    }
-
-    private fun getSampleUserPosts(username: String): List<Post> {
-        return listOf(
-            Post(
-                postId = "sample_1",
-                userId = auth.currentUser?.uid ?: "current_user",
-                username = username,
-                userProfileImage = "",
-                caption = "Just shared my favorite playlist! 🎵",
-                imageUrl = "",
-                likes = 42,
-                comments = 8,
-                timestamp = System.currentTimeMillis() - 3600000,
-                music = null
-            )
-        )
-    }
-
-    private fun getSampleLikedPosts(): List<Post> {
-        return listOf(
-            Post(
-                postId = "liked_1",
-                userId = "user1",
-                username = "Taylor Swift",
-                userProfileImage = "",
-                caption = "Such a fun night making music! ✨",
-                imageUrl = "",
-                likes = 5,
-                comments = 2,
-                timestamp = System.currentTimeMillis() - 10800000,
-                music = null
-            ),
-            Post(
-                postId = "liked_2",
-                userId = "user2",
-                username = "BTS",
-                userProfileImage = "",
-                caption = "Have a wonderful concert! ✨",
-                imageUrl = "",
-                likes = 1000,
-                comments = 150,
-                timestamp = System.currentTimeMillis() - 3600000,
-                music = null
-            ),
-            Post(
-                postId = "liked_3",
-                userId = "user3",
-                username = "Black Pink",
-                userProfileImage = "",
-                caption = "How amazing is this new album! ✨",
-                imageUrl = "",
-                likes = 2000,
-                comments = 200,
-                timestamp = System.currentTimeMillis() - 86400000,
-                music = null
-            )
-        )
+        tabLayout?.getTabAt(1)?.text = "Likes (0)"
     }
 }

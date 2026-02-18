@@ -43,6 +43,7 @@ data class UserProfile(
     val userId: String = "",
     val username: String = "",
     val handle: String = "",
+    val email: String = "",  // ✅ ADDED: Email field
     val profileImage: String = "",
     val bio: String = "",
     val followers: Int = 0,

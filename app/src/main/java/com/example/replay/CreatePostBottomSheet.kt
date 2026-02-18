@@ -2,6 +2,7 @@ package com.example.replay
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +14,8 @@ import android.widget.TextView
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class CreatePostBottomSheet : BottomSheetDialogFragment() {
 
@@ -28,6 +31,10 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
 
     private var selectedMusic: ITunesSong? = null
     private var isFavorite: Boolean = false
+
+    // Firebase
+    private val auth = FirebaseAuth.getInstance()
+    private val database = FirebaseDatabase.getInstance()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -147,63 +154,65 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
             return
         }
 
-        // Get current user info
-        val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        val username = prefs.getString("username", "uri") ?: "uri"
-
-        // Create post object
-        val post = Post(
-            postId = "post_${System.currentTimeMillis()}",
-            userId = "current_user",
-            username = username,
-            userProfileImage = "",
-            caption = text,
-            imageUrl = "",
-            likes = 0,
-            comments = 0,
-            timestamp = System.currentTimeMillis(),
-            music = selectedMusic
-        )
-
-        // ✅ SAVE POST TO SHAREDPREFERENCES WITH MUSIC
-        savePost(post)
-
-        // Show success message
-        Toast.makeText(requireContext(), "Post created!", Toast.LENGTH_SHORT).show()
-
-        // Close bottom sheet
-        dismiss()
-    }
-
-    private fun savePost(post: Post) {
-        val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        val editor = prefs.edit()
-
-        // Get current post count
-        val postCount = prefs.getInt("post_count", 0)
-
-        // Save new post
-        editor.putString("post_${postCount}_id", post.postId)
-        editor.putString("post_${postCount}_caption", post.caption)
-        editor.putLong("post_${postCount}_timestamp", post.timestamp)
-        editor.putInt("post_${postCount}_likes", post.likes)
-
-        // ✅ FIXED: Save music if present
-        if (post.music != null) {
-            editor.putLong("post_${postCount}_music_trackId", post.music.trackId)
-            editor.putString("post_${postCount}_music_trackName", post.music.trackName)
-            editor.putString("post_${postCount}_music_artistName", post.music.artistName)
-            editor.putString("post_${postCount}_music_artworkUrl", post.music.artworkUrl100)
-            editor.putString("post_${postCount}_music_previewUrl", post.music.previewUrl)
-            editor.putString("post_${postCount}_music_collectionName", post.music.collectionName)
-            editor.putString("post_${postCount}_music_trackViewUrl", post.music.trackViewUrl)
-            editor.putString("post_${postCount}_music_releaseDate", post.music.releaseDate)
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Toast.makeText(requireContext(), "Please log in to post", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        // Increment post count
-        editor.putInt("post_count", postCount + 1)
+        // Disable post button to prevent double posting
+        postButton.isEnabled = false
+        postButton.text = "Posting..."
 
-        editor.apply()
+        // Get username from Firebase or use email
+        database.getReference("users").child(currentUser.uid).get()
+            .addOnSuccessListener { snapshot ->
+                val profile = snapshot.getValue(UserProfile::class.java)
+                val username = profile?.username ?: currentUser.email?.substringBefore("@") ?: "User"
+
+                // Create post object with unique ID
+                val postId = database.getReference("posts").push().key ?: return@addOnSuccessListener
+
+                val post = Post(
+                    postId = postId,
+                    userId = currentUser.uid,
+                    username = username,
+                    userProfileImage = profile?.profileImage ?: "",
+                    caption = text,
+                    imageUrl = "",
+                    likes = 0,
+                    comments = 0,
+                    timestamp = System.currentTimeMillis(),
+                    music = selectedMusic
+                )
+
+                // Save post to Firebase
+                savePostToFirebase(post)
+            }
+            .addOnFailureListener { e ->
+                Log.e("CreatePost", "Failed to get user profile", e)
+                Toast.makeText(requireContext(), "Failed to create post", Toast.LENGTH_SHORT).show()
+                postButton.isEnabled = true
+                postButton.text = "Post"
+            }
+    }
+
+    // ✅ NEW: Save post to Firebase Realtime Database
+    private fun savePostToFirebase(post: Post) {
+        val postsRef = database.getReference("posts").child(post.postId)
+
+        postsRef.setValue(post)
+            .addOnSuccessListener {
+                Log.d("CreatePost", "Post saved to Firebase: ${post.postId}")
+                Toast.makeText(requireContext(), "Post created!", Toast.LENGTH_SHORT).show()
+                dismiss()
+            }
+            .addOnFailureListener { e ->
+                Log.e("CreatePost", "Failed to save post to Firebase", e)
+                Toast.makeText(requireContext(), "Failed to create post: ${e.message}", Toast.LENGTH_LONG).show()
+                postButton.isEnabled = true
+                postButton.text = "Post"
+            }
     }
 
     companion object {

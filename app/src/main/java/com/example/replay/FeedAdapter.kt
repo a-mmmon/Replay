@@ -7,15 +7,15 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.imageview.ShapeableImageView
 import com.bumptech.glide.Glide
+import com.google.android.material.imageview.ShapeableImageView
 
 class FeedAdapter(
     private val posts: MutableList<Post>,
-    private val onPostClick: (Post) -> Unit
+    private val onPostClick: (Post) -> Unit,
+    private val onUsernameClick: ((Post) -> Unit)? = null  // ← NEW: tap username to open profile
 ) : RecyclerView.Adapter<FeedAdapter.PostViewHolder>() {
 
-    // Track liked posts and their like counts
     private val likedPosts = mutableSetOf<String>()
     private val likeCounts = mutableMapOf<String, Int>()
 
@@ -41,7 +41,6 @@ class FeedAdapter(
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
 
-        // Initialize like count for this post if not already done
         if (!likeCounts.containsKey(post.postId)) {
             likeCounts[post.postId] = post.likes
         }
@@ -51,7 +50,6 @@ class FeedAdapter(
         holder.likesCount.text = likeCounts[post.postId].toString()
         holder.timestamp.text = formatTimestamp(post.timestamp)
 
-        // Load profile image
         if (post.userProfileImage.isNotEmpty()) {
             Glide.with(holder.itemView.context)
                 .load(post.userProfileImage)
@@ -61,13 +59,10 @@ class FeedAdapter(
             holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
         }
 
-        // Show/hide music container based on whether post has music
         if (post.music != null) {
             holder.musicContainer.visibility = View.VISIBLE
             holder.musicTitle.text = post.music.trackName
             holder.musicArtist.text = post.music.artistName
-
-            // Load album art
             if (post.music.artworkUrl100.isNotEmpty()) {
                 Glide.with(holder.itemView.context)
                     .load(post.music.artworkUrl100)
@@ -77,51 +72,50 @@ class FeedAdapter(
             holder.musicContainer.visibility = View.GONE
         }
 
-        // ✅ FIXED: Set like button icon based on liked state
+        // Check Firebase for like state
+        PostHelper.isPostLiked(post.postId) { isLiked ->
+            if (isLiked) likedPosts.add(post.postId)
+            else likedPosts.remove(post.postId)
+            holder.likeButton.setImageResource(
+                if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
+            )
+        }
+
         val isLiked = likedPosts.contains(post.postId)
         holder.likeButton.setImageResource(
             if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
         )
 
-        // ✅ FIXED: Like button click listener that actually works
+        // ✅ Username + profile image both open user profile
+        val profileClickListener = View.OnClickListener {
+            onUsernameClick?.invoke(post)
+        }
+        holder.userName.setOnClickListener(profileClickListener)
+        holder.profileImage.setOnClickListener(profileClickListener)
+
         holder.likeButton.setOnClickListener {
-            val currentPosition = holder.bindingAdapterPosition
-            if (currentPosition != RecyclerView.NO_POSITION) {
-                val currentPost = posts[currentPosition]
-                toggleLike(currentPost, currentPosition)
-            }
+            val p = holder.bindingAdapterPosition
+            if (p != RecyclerView.NO_POSITION) toggleLike(posts[p], p, holder)
         }
 
-        // Post click listener
-        holder.itemView.setOnClickListener {
-            onPostClick(post)
-        }
+        holder.itemView.setOnClickListener { onPostClick(post) }
     }
 
     override fun getItemCount(): Int = posts.size
 
-    // ✅ FIXED: Toggle like functionality without reassigning val
-    private fun toggleLike(post: Post, position: Int) {
-        val currentCount = likeCounts[post.postId] ?: post.likes
-
-        if (likedPosts.contains(post.postId)) {
-            // Unlike
-            likedPosts.remove(post.postId)
-            likeCounts[post.postId] = currentCount - 1
-        } else {
-            // Like
-            likedPosts.add(post.postId)
-            likeCounts[post.postId] = currentCount + 1
+    private fun toggleLike(post: Post, position: Int, holder: PostViewHolder) {
+        PostHelper.toggleLike(post.postId) { isLiked, newCount ->
+            if (isLiked) likedPosts.add(post.postId) else likedPosts.remove(post.postId)
+            likeCounts[post.postId] = newCount
+            holder.likesCount.text = newCount.toString()
+            holder.likeButton.setImageResource(
+                if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
+            )
         }
-
-        // Update only this item
-        notifyItemChanged(position)
     }
 
     private fun formatTimestamp(timestamp: Long): String {
-        val now = System.currentTimeMillis()
-        val diff = now - timestamp
-
+        val diff = System.currentTimeMillis() - timestamp
         return when {
             diff < 60000 -> "Just now"
             diff < 3600000 -> "${diff / 60000}m ago"
