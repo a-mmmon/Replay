@@ -13,7 +13,7 @@ import com.google.android.material.imageview.ShapeableImageView
 class FeedAdapter(
     private val posts: MutableList<Post>,
     private val onPostClick: (Post) -> Unit,
-    private val onUsernameClick: ((Post) -> Unit)? = null  // ← NEW: tap username to open profile
+    private val onUsernameClick: ((Post) -> Unit)? = null
 ) : RecyclerView.Adapter<FeedAdapter.PostViewHolder>() {
 
     private val likedPosts = mutableSetOf<String>()
@@ -59,20 +59,21 @@ class FeedAdapter(
             holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
         }
 
-        if (post.music != null) {
+        // ✅ FIX: assign to local val before smart cast
+        val music = post.music
+        if (music != null) {
             holder.musicContainer.visibility = View.VISIBLE
-            holder.musicTitle.text = post.music.trackName
-            holder.musicArtist.text = post.music.artistName
-            if (post.music.artworkUrl100.isNotEmpty()) {
+            holder.musicTitle.text = music.trackName
+            holder.musicArtist.text = music.artistName
+            if (music.artworkUrl100.isNotEmpty()) {
                 Glide.with(holder.itemView.context)
-                    .load(post.music.artworkUrl100)
+                    .load(music.artworkUrl100)
                     .into(holder.musicImage)
             }
         } else {
             holder.musicContainer.visibility = View.GONE
         }
 
-        // Check Firebase for like state
         PostHelper.isPostLiked(post.postId) { isLiked ->
             if (isLiked) likedPosts.add(post.postId)
             else likedPosts.remove(post.postId)
@@ -86,7 +87,6 @@ class FeedAdapter(
             if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
         )
 
-        // ✅ Username + profile image both open user profile
         val profileClickListener = View.OnClickListener {
             onUsernameClick?.invoke(post)
         }

@@ -41,7 +41,6 @@ class ProfilePostsAdapter(
         holder.likesCount.text = post.likes.toString()
         holder.timestamp.text = formatTimestamp(post.timestamp)
 
-        // Load profile image
         if (post.userProfileImage.isNotEmpty()) {
             Glide.with(holder.itemView.context)
                 .load(post.userProfileImage)
@@ -51,29 +50,23 @@ class ProfilePostsAdapter(
             holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
         }
 
-        // Show/hide music container based on whether post has music
-        if (post.music != null) {
+        // ✅ FIX: local val to allow smart cast on mutable property
+        val music = post.music
+        if (music != null) {
             holder.musicContainer.visibility = View.VISIBLE
-            holder.musicTitle.text = post.music.trackName
-            holder.musicArtist.text = post.music.artistName
-
-            // Load album art
-            if (post.music.artworkUrl100.isNotEmpty()) {
+            holder.musicTitle.text = music.trackName
+            holder.musicArtist.text = music.artistName
+            if (music.artworkUrl100.isNotEmpty()) {
                 Glide.with(holder.itemView.context)
-                    .load(post.music.artworkUrl100)
+                    .load(music.artworkUrl100)
                     .into(holder.musicImage)
             }
         } else {
             holder.musicContainer.visibility = View.GONE
         }
 
-        // Set like button icon
         holder.likeButton.setImageResource(R.drawable.ic_heart_outline)
-
-        // Like button click listener
-        holder.likeButton.setOnClickListener {
-            onLikeClicked(post)
-        }
+        holder.likeButton.setOnClickListener { onLikeClicked(post) }
     }
 
     override fun getItemCount(): Int = posts.size
@@ -83,15 +76,10 @@ class ProfilePostsAdapter(
         notifyDataSetChanged()
     }
 
-    private fun onLikeClicked(post: Post) {
-        // Implement like/unlike logic here
-        // Update in your database and refresh the list
-    }
+    private fun onLikeClicked(post: Post) {}
 
     private fun formatTimestamp(timestamp: Long): String {
-        val now = System.currentTimeMillis()
-        val diff = now - timestamp
-
+        val diff = System.currentTimeMillis() - timestamp
         return when {
             diff < 60000 -> "Just now"
             diff < 3600000 -> "${diff / 60000}m"

@@ -34,15 +34,10 @@ class ProfileFragment : Fragment() {
     private var postsAdapter: FeedAdapter? = null
     private val userPosts = mutableListOf<Post>()
 
-    // Firebase
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return try {
             inflater.inflate(R.layout.fragment_profile, container, false)
         } catch (e: Exception) {
@@ -66,9 +61,7 @@ class ProfileFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        try {
-            loadUserPosts()
-        } catch (e: Exception) {
+        try { loadUserPosts() } catch (e: Exception) {
             Log.e("ProfileFragment", "Error in onResume", e)
         }
     }
@@ -92,24 +85,15 @@ class ProfileFragment : Fragment() {
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
-
                     val profile = snapshot.getValue(UserProfile::class.java)
                     if (profile != null) {
                         usernameText?.text = profile.username.ifEmpty { "User" }
-
-                        // Handle might be missing, generate from username or email
-                        val handle = if (profile.handle.isNotEmpty()) {
-                            profile.handle
-                        } else {
-                            "@${profile.username.ifEmpty { auth.currentUser?.email?.substringBefore("@") ?: "user" }}"
-                        }
+                        val handle = if (profile.handle.isNotEmpty()) profile.handle
+                        else "@${profile.username.ifEmpty { auth.currentUser?.email?.substringBefore("@") ?: "user" }}"
                         handleText?.text = handle
-
                         followersCount?.text = profile.followers.toString()
                         followingCount?.text = profile.following.toString()
-                        Log.d("ProfileFragment", "Profile loaded from Firebase: ${profile.username}")
                     } else {
-                        // No profile in DB yet — create one
                         createUserProfile(userId)
                     }
                 }
@@ -123,26 +107,12 @@ class ProfileFragment : Fragment() {
     private fun createUserProfile(userId: String) {
         val email = auth.currentUser?.email ?: "user@email.com"
         val username = email.substringBefore("@")
-
         val newProfile = UserProfile(
-            userId = userId,
-            username = username,
-            handle = "@$username",
-            email = email,
-            bio = "",
-            profileImage = "",
-            followers = 0,
-            following = 0
+            userId = userId, username = username, handle = "@$username",
+            email = email, bio = "", profileImage = "", followers = 0, following = 0
         )
-
         database.getReference("users").child(userId).setValue(newProfile)
             .addOnSuccessListener {
-                Log.d("ProfileFragment", "User profile created: $username")
-                usernameText?.text = username
-                handleText?.text = "@$username"
-            }
-            .addOnFailureListener { e ->
-                Log.e("ProfileFragment", "Failed to create profile", e)
                 usernameText?.text = username
                 handleText?.text = "@$username"
             }
@@ -150,12 +120,9 @@ class ProfileFragment : Fragment() {
 
     private fun setupRecyclerView() {
         val recyclerView = postsRecyclerView ?: return
-
-        // ✅ FIXED: Provide the onPostClick callback with named parameter
         postsAdapter = FeedAdapter(userPosts, onPostClick = { post ->
             Log.d("ProfileFragment", "Post clicked: ${post.postId}")
         })
-
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = postsAdapter
         loadUserPosts()
@@ -180,9 +147,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun setupSettingsButton() {
-        settingsButton?.setOnClickListener {
-            showSettingsMenu()
-        }
+        settingsButton?.setOnClickListener { showSettingsMenu() }
     }
 
     private fun showSettingsMenu() {
@@ -190,13 +155,10 @@ class ProfileFragment : Fragment() {
             .setTitle("Settings")
             .setItems(arrayOf("Edit Profile", "Logout")) { _, which ->
                 when (which) {
-                    0 -> {
-                        startActivity(Intent(requireContext(), EditProfileActivity::class.java))
-                    }
+                    0 -> startActivity(Intent(requireContext(), EditProfileActivity::class.java))
                     1 -> performLogout()
                 }
-            }
-            .show()
+            }.show()
     }
 
     private fun performLogout() {
@@ -205,7 +167,6 @@ class ProfileFragment : Fragment() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         requireActivity().finish()
-        Log.d("ProfileFragment", "Logged out via Firebase")
     }
 
     private fun loadUserPosts() {
@@ -218,18 +179,12 @@ class ProfileFragment : Fragment() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
                     userPosts.clear()
-
                     for (child in snapshot.children) {
-                        val post = child.getValue(Post::class.java)
-                        post?.let { userPosts.add(it) }
+                        child.getValue(Post::class.java)?.let { userPosts.add(it) }
                     }
-
-                    // Sort by timestamp (newest first)
                     userPosts.sortByDescending { it.timestamp }
-
                     postsAdapter?.notifyDataSetChanged()
                     tabLayout?.getTabAt(0)?.text = "Posts (${userPosts.size})"
-                    Log.d("ProfileFragment", "Loaded ${userPosts.size} posts")
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -239,9 +194,55 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadUserLikes() {
-        userPosts.clear()
-        // TODO: Load actual liked posts from Firebase
-        postsAdapter?.notifyDataSetChanged()
-        tabLayout?.getTabAt(1)?.text = "Likes (0)"
+        val userId = auth.currentUser?.uid ?: return
+
+        // PostHelper writes likes to userLikes/{userId}/{postId}
+        database.getReference("userLikes").child(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return
+                    val likedPostIds = snapshot.children.mapNotNull { it.key }.filter { it.isNotEmpty() }
+
+                    if (likedPostIds.isEmpty()) {
+                        userPosts.clear()
+                        postsAdapter?.notifyDataSetChanged()
+                        tabLayout?.getTabAt(1)?.text = "Likes (0)"
+                        return
+                    }
+
+                    val fetchedPosts = mutableListOf<Post>()
+                    var fetched = 0
+
+                    for (postId in likedPostIds) {
+                        database.getReference("posts").child(postId)
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(postSnap: DataSnapshot) {
+                                    if (!isAdded) return
+                                    postSnap.getValue(Post::class.java)?.let { fetchedPosts.add(it) }
+                                    fetched++
+                                    if (fetched == likedPostIds.size) {
+                                        userPosts.clear()
+                                        userPosts.addAll(fetchedPosts.sortedByDescending { it.timestamp })
+                                        postsAdapter?.notifyDataSetChanged()
+                                        tabLayout?.getTabAt(1)?.text = "Likes (${userPosts.size})"
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    fetched++
+                                    if (fetched == likedPostIds.size) {
+                                        userPosts.clear()
+                                        userPosts.addAll(fetchedPosts.sortedByDescending { it.timestamp })
+                                        postsAdapter?.notifyDataSetChanged()
+                                        tabLayout?.getTabAt(1)?.text = "Likes (${fetchedPosts.size})"
+                                    }
+                                }
+                            })
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ProfileFragment", "Failed to load likes: ${error.message}")
+                }
+            })
     }
 }

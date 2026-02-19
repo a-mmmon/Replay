@@ -1,12 +1,8 @@
 package com.example.replay
 
 import android.os.Parcelable
+import com.google.firebase.database.PropertyName
 import kotlinx.parcelize.Parcelize
-
-/**
- * Unified Data Models for Replay App
- * Contains all data classes in ONE place to avoid redeclaration errors
- */
 
 // ============================================
 // MESSAGING DATA CLASSES
@@ -14,24 +10,24 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class Conversation(
-    val conversationId: String = "",
-    val otherUserId: String = "",
-    val otherUserName: String = "",
-    val otherUserProfileImage: String = "",
-    val lastMessage: String = "",
-    val timestamp: Long = 0L,
-    val unreadBadge: Int = 0,
-    val messages: List<Message> = emptyList()
+    var conversationId: String = "",
+    var otherUserId: String = "",
+    var otherUserName: String = "",
+    var otherUserProfileImage: String = "",
+    var lastMessage: String = "",
+    var timestamp: Long = 0L,
+    var unreadBadge: Int = 0,
+    var messages: List<Message> = emptyList()
 ) : Parcelable
 
 @Parcelize
 data class Message(
-    val messageId: String = "",
-    val senderId: String = "",
-    val receiverId: String = "",
-    val text: String = "",
-    val timestamp: Long = 0L,
-    val isRead: Boolean = false
+    var messageId: String = "",
+    var senderId: String = "",
+    var receiverId: String = "",
+    var text: String = "",
+    var timestamp: Long = 0L,
+    var isRead: Boolean = false
 ) : Parcelable
 
 // ============================================
@@ -40,15 +36,18 @@ data class Message(
 
 @Parcelize
 data class UserProfile(
-    val userId: String = "",
-    val username: String = "",
-    val handle: String = "",
-    val email: String = "",  // ✅ ADDED: Email field
-    val profileImage: String = "",
-    val bio: String = "",
-    val followers: Int = 0,
-    val following: Int = 0
-    // NOTE: No-arg constructor is required by Firebase — default values provide this ✅
+    var userId: String = "",
+    var username: String = "",
+    var handle: String = "",
+    var email: String = "",
+
+    @get:PropertyName("profileImage")
+    @set:PropertyName("profileImage")
+    var profileImage: String = "",
+
+    var bio: String = "",
+    var followers: Int = 0,
+    var following: Int = 0
 ) : Parcelable
 
 // ============================================
@@ -57,14 +56,18 @@ data class UserProfile(
 
 @Parcelize
 data class Post(
-    val postId: String = "",
-    val userId: String = "",
-    val username: String = "",
-    val userProfileImage: String = "",
-    val caption: String = "",
-    val imageUrl: String = "",
-    val likes: Int = 0,
-    val comments: Int = 0,
-    val timestamp: Long = 0L,
-    val music: ITunesSong? = null
+    var postId: String = "",
+    var userId: String = "",
+    var username: String = "",
+
+    @get:PropertyName("userProfileImage")
+    @set:PropertyName("userProfileImage")
+    var userProfileImage: String = "",
+
+    var caption: String = "",
+    var imageUrl: String = "",
+    var likes: Int = 0,
+    var comments: Int = 0,
+    var timestamp: Long = 0L,
+    var music: ITunesSong? = null
 ) : Parcelable

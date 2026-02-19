@@ -101,6 +101,8 @@ dependencies {
 
     // OPTIONAL: Firebase UI for easier auth implementation
     implementation("com.firebaseui:firebase-ui-auth:8.0.2")
+
+    implementation("com.google.firebase:firebase-appcheck-debug:17.1.0")
     // ==================================================
 
     // Testing
