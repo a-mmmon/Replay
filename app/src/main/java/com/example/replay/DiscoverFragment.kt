@@ -11,6 +11,8 @@ import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -43,6 +45,12 @@ class DiscoverFragment : Fragment() {
     private lateinit var trendingSongsHeader: TextView
     private lateinit var popularSongsHeader: TextView
 
+    // Chips
+    private lateinit var chipGroup: ChipGroup
+    private lateinit var chipSongs: Chip
+    private lateinit var chipProfiles: Chip
+    private var currentSearchMode = "songs"
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -56,6 +64,7 @@ class DiscoverFragment : Fragment() {
 
         initializeViews(view)
         setupRecyclerViews()
+        setupSearchFilters()
         setupSearchView(view)
         loadInitialContent()
     }
@@ -72,6 +81,10 @@ class DiscoverFragment : Fragment() {
 
         popularSongsRecycler = view.findViewById(R.id.popularSongsRecycler)
         popularSongsHeader = view.findViewById(R.id.popularSongsHeader)
+
+        chipGroup = view.findViewById(R.id.searchFilterGroup)
+        chipSongs = view.findViewById(R.id.chipSongs)
+        chipProfiles = view.findViewById(R.id.chipProfiles)
     }
 
     private fun setupRecyclerViews() {
@@ -87,53 +100,76 @@ class DiscoverFragment : Fragment() {
         featuredArtistsAdapter = FeaturedArtistAdapter(featuredArtists) { artistName ->
             searchSongs(artistName)
         }
-        featuredArtistsRecycler.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.HORIZONTAL,
-            false
-        )
+        featuredArtistsRecycler.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         featuredArtistsRecycler.adapter = featuredArtistsAdapter
 
         // Trending Songs
         trendingSongsAdapter = TrendingSongAdapter(trendingSongs) { song ->
             showMusicBottomSheet(song)
         }
-        trendingSongsRecycler.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.HORIZONTAL,
-            false
-        )
+        trendingSongsRecycler.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         trendingSongsRecycler.adapter = trendingSongsAdapter
 
         // Popular Songs
         popularSongsAdapter = PopularSongAdapter(popularSongs) { song ->
             showMusicBottomSheet(song)
         }
-        popularSongsRecycler.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.HORIZONTAL,
-            false
-        )
+        popularSongsRecycler.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         popularSongsRecycler.adapter = popularSongsAdapter
+    }
+
+    private fun setupSearchFilters() {
+
+        chipSongs.setOnClickListener {
+            currentSearchMode = "songs"
+            chipSongs.isChecked = true
+            chipProfiles.isChecked = false
+        }
+
+        chipProfiles.setOnClickListener {
+            currentSearchMode = "profiles"
+            chipProfiles.isChecked = true
+            chipSongs.isChecked = false
+        }
     }
 
     private fun setupSearchView(view: View) {
         val searchView = view.findViewById<SearchView>(R.id.searchView)
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+
             override fun onQueryTextSubmit(query: String?): Boolean {
+
                 if (!query.isNullOrBlank()) {
-                    searchSongs(query)
+
+                    if (currentSearchMode == "songs") {
+                        searchSongs(query)
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "Profile search coming soon",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
+
                 searchView.clearFocus()
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                if (newText.isNullOrEmpty()) {
+
+                if (!newText.isNullOrEmpty()) {
+                    chipGroup.visibility = View.VISIBLE
+                } else {
+                    chipGroup.visibility = View.GONE
                     searchResultsHeader.visibility = View.GONE
                     searchRecyclerView.visibility = View.GONE
                 }
+
                 return false
             }
         })
@@ -145,7 +181,6 @@ class DiscoverFragment : Fragment() {
         loadPopularSongs()
     }
 
-    // ✅ NEW: Load Featured Artists with real images
     private fun loadFeaturedArtists() {
 
         val artistNames = listOf(
@@ -237,12 +272,6 @@ class DiscoverFragment : Fragment() {
 
                     searchResultsHeader.visibility = View.VISIBLE
                     searchRecyclerView.visibility = View.VISIBLE
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Found ${results.size} songs",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
 
                 override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
