@@ -13,6 +13,23 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <!-- ✅ NEW: Repost indicator (shows "Username reposted") -->
+        <TextView
+            android:id="@+id/repostIndicator"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:drawablePadding="4dp"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp"
+            app:drawableStartCompat="@drawable/ic_repost"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Van reposted"
+            tools:visibility="visible" />
+
         <!-- Profile Image and Username -->
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/profileImage"
@@ -21,7 +38,7 @@
             android:scaleType="centerCrop"
             app:shapeAppearanceOverlay="@style/CircleImageView"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/repostIndicator" />
 
         <TextView
             android:id="@+id/userName"
@@ -124,7 +141,7 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- ✅ FIXED: Barrier to handle when musicContainer is GONE -->
+        <!-- Barrier to handle when musicContainer is GONE -->
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/contentBarrier"
             android:layout_width="wrap_content"
@@ -132,32 +149,109 @@
             app:barrierDirection="bottom"
             app:constraint_referenced_ids="postText,musicContainer" />
 
-        <!-- Like Button and Count -->
-        <ImageView
-            android:id="@+id/likeButton"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginTop="12dp"
-            android:src="@drawable/ic_heart_outline"
-            android:contentDescription="Like"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/contentBarrier"
-            tools:src="@drawable/ic_heart_filled" />
-
-        <TextView
-            android:id="@+id/likesCount"
-            android:layout_width="wrap_content"
+        <!-- ✅ NEW: Interaction Buttons (Like, Comment, Repost) -->
+        <LinearLayout
+            android:id="@+id/interactionButtons"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textSize="14sp"
-            android:textColor="?android:attr/textColorSecondary"
-            app:layout_constraintStart_toEndOf="@id/likeButton"
-            app:layout_constraintTop_toTopOf="@id/likeButton"
-            app:layout_constraintBottom_toBottomOf="@id/likeButton"
-            tools:text="42" />
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/contentBarrier">
+
+            <!-- Like Button -->
+            <LinearLayout
+                android:id="@+id/likeButtonContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp">
+
+                <ImageView
+                    android:id="@+id/likeButton"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_heart_outline"
+                    android:contentDescription="Like"
+                    tools:src="@drawable/ic_heart_filled" />
+
+                <TextView
+                    android:id="@+id/likesCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textSize="13sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    tools:text="42" />
+            </LinearLayout>
+
+            <!-- ✅ NEW: Comment Button -->
+            <LinearLayout
+                android:id="@+id/commentButtonContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp">
+
+                <ImageView
+                    android:id="@+id/commentButton"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_comment"
+                    android:contentDescription="Comment" />
+
+                <TextView
+                    android:id="@+id/commentsCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textSize="13sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    tools:text="8" />
+            </LinearLayout>
+
+            <!-- ✅ NEW: Repost Button -->
+            <LinearLayout
+                android:id="@+id/repostButtonContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp">
+
+                <ImageView
+                    android:id="@+id/repostButton"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_repost"
+                    android:contentDescription="Repost" />
+
+                <TextView
+                    android:id="@+id/repostsCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textSize="13sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    tools:text="5" />
+            </LinearLayout>
+
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

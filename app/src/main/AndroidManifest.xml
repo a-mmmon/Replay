@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.replay">
 
-    <!-- Add internet permission for loading images -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -50,12 +49,19 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <!-- USER PROFILE ACTIVITY -->
         <activity
             android:name=".UserProfileActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <!-- COMMENT ACTIVITY -->
+        <activity
+            android:name=".CommentActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 
 </manifest>
-

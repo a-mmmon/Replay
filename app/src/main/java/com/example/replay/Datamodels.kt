@@ -1,8 +1,12 @@
 package com.example.replay
 
 import android.os.Parcelable
-import com.google.firebase.database.PropertyName
 import kotlinx.parcelize.Parcelize
+
+/**
+ * Unified Data Models for Replay App
+ * Contains all data classes in ONE place to avoid redeclaration errors
+ */
 
 // ============================================
 // MESSAGING DATA CLASSES
@@ -10,24 +14,24 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class Conversation(
-    var conversationId: String = "",
-    var otherUserId: String = "",
-    var otherUserName: String = "",
-    var otherUserProfileImage: String = "",
-    var lastMessage: String = "",
-    var timestamp: Long = 0L,
-    var unreadBadge: Int = 0,
-    var messages: List<Message> = emptyList()
+    val conversationId: String = "",
+    val otherUserId: String = "",
+    val otherUserName: String = "",
+    val otherUserProfileImage: String = "",
+    val lastMessage: String = "",
+    val timestamp: Long = 0L,
+    val unreadBadge: Int = 0,
+    val messages: List<Message> = emptyList()
 ) : Parcelable
 
 @Parcelize
 data class Message(
-    var messageId: String = "",
-    var senderId: String = "",
-    var receiverId: String = "",
-    var text: String = "",
-    var timestamp: Long = 0L,
-    var isRead: Boolean = false
+    val messageId: String = "",
+    val senderId: String = "",
+    val receiverId: String = "",
+    val text: String = "",
+    val timestamp: Long = 0L,
+    val isRead: Boolean = false
 ) : Parcelable
 
 // ============================================
@@ -36,18 +40,15 @@ data class Message(
 
 @Parcelize
 data class UserProfile(
-    var userId: String = "",
-    var username: String = "",
-    var handle: String = "",
-    var email: String = "",
-
-    @get:PropertyName("profileImage")
-    @set:PropertyName("profileImage")
-    var profileImage: String = "",
-
-    var bio: String = "",
-    var followers: Int = 0,
-    var following: Int = 0
+    val userId: String = "",
+    val username: String = "",
+    val handle: String = "",
+    val email: String = "",
+    val profileImage: String = "",
+    val bio: String = "",
+    val followers: Int = 0,
+    val following: Int = 0
+    // NOTE: No-arg constructor is required by Firebase — default values provide this ✅
 ) : Parcelable
 
 // ============================================
@@ -56,18 +57,47 @@ data class UserProfile(
 
 @Parcelize
 data class Post(
-    var postId: String = "",
-    var userId: String = "",
-    var username: String = "",
+    val postId: String = "",
+    val userId: String = "",
+    val username: String = "",
+    val userProfileImage: String = "",
+    val caption: String = "",
+    val imageUrl: String = "",
+    val likes: Int = 0,
+    val comments: Int = 0,
+    val reposts: Int = 0,
+    val timestamp: Long = 0L,
+    val music: ITunesSong? = null,
+    val isRepost: Boolean = false,
+    val originalPostId: String = "",
+    val repostedByUsername: String = ""
+) : Parcelable
 
-    @get:PropertyName("userProfileImage")
-    @set:PropertyName("userProfileImage")
-    var userProfileImage: String = "",
+// ============================================
+// COMMENT DATA CLASS
+// ============================================
 
-    var caption: String = "",
-    var imageUrl: String = "",
-    var likes: Int = 0,
-    var comments: Int = 0,
-    var timestamp: Long = 0L,
-    var music: ITunesSong? = null
+@Parcelize
+data class Comment(
+    val commentId: String = "",
+    val postId: String = "",
+    val userId: String = "",
+    val username: String = "",
+    val userProfileImage: String = "",
+    val commentText: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+) : Parcelable
+
+// ============================================
+// REPOST DATA CLASS
+// ============================================
+
+@Parcelize
+data class Repost(
+    val repostId: String = "",
+    val originalPostId: String = "",
+    val originalUserId: String = "",
+    val repostedByUserId: String = "",
+    val repostedByUsername: String = "",
+    val timestamp: Long = System.currentTimeMillis()
 ) : Parcelable

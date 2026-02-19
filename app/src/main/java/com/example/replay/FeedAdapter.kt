@@ -1,10 +1,13 @@
 package com.example.replay
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -18,6 +21,9 @@ class FeedAdapter(
 
     private val likedPosts = mutableSetOf<String>()
     private val likeCounts = mutableMapOf<String, Int>()
+    private val repostedPosts = mutableSetOf<String>()
+    private val repostCounts = mutableMapOf<String, Int>()
+    private val commentCounts = mutableMapOf<String, Int>()
 
     inner class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: ShapeableImageView = itemView.findViewById(R.id.profileImage)
@@ -30,6 +36,14 @@ class FeedAdapter(
         val musicArtist: TextView = itemView.findViewById(R.id.musicArtist)
         val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         val likeButton: ImageView = itemView.findViewById(R.id.likeButton)
+        val likeButtonContainer: LinearLayout = itemView.findViewById(R.id.likeButtonContainer)
+        val repostIndicator: TextView = itemView.findViewById(R.id.repostIndicator)
+        val commentsCount: TextView = itemView.findViewById(R.id.commentsCount)
+        val commentButton: ImageView = itemView.findViewById(R.id.commentButton)
+        val commentButtonContainer: LinearLayout = itemView.findViewById(R.id.commentButtonContainer)
+        val repostsCount: TextView = itemView.findViewById(R.id.repostsCount)
+        val repostButton: ImageView = itemView.findViewById(R.id.repostButton)
+        val repostButtonContainer: LinearLayout = itemView.findViewById(R.id.repostButtonContainer)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
@@ -44,11 +58,34 @@ class FeedAdapter(
         if (!likeCounts.containsKey(post.postId)) {
             likeCounts[post.postId] = post.likes
         }
+        if (!repostCounts.containsKey(post.postId)) {
+            repostCounts[post.postId] = post.reposts
+        }
+        if (!commentCounts.containsKey(post.postId)) {
+            commentCounts[post.postId] = post.comments
+        }
+
+        // Repost indicator
+        if (post.isRepost && post.repostedByUsername.isNotEmpty()) {
+            holder.repostIndicator.visibility = View.VISIBLE
+            holder.repostIndicator.text = "${post.repostedByUsername} reposted"
+        } else {
+            holder.repostIndicator.visibility = View.GONE
+        }
 
         holder.userName.text = post.username
         holder.postText.text = post.caption
         holder.likesCount.text = likeCounts[post.postId].toString()
+        holder.commentsCount.text = commentCounts[post.postId].toString()
+        holder.repostsCount.text = repostCounts[post.postId].toString()
         holder.timestamp.text = formatTimestamp(post.timestamp)
+
+        // Username + profile image click to open profile
+        val profileClickListener = View.OnClickListener {
+            onUsernameClick?.invoke(post)
+        }
+        holder.userName.setOnClickListener(profileClickListener)
+        holder.profileImage.setOnClickListener(profileClickListener)
 
         if (post.userProfileImage.isNotEmpty()) {
             Glide.with(holder.itemView.context)
@@ -59,21 +96,21 @@ class FeedAdapter(
             holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
         }
 
-        // ✅ FIX: assign to local val before smart cast
-        val music = post.music
-        if (music != null) {
+        if (post.music != null) {
             holder.musicContainer.visibility = View.VISIBLE
-            holder.musicTitle.text = music.trackName
-            holder.musicArtist.text = music.artistName
-            if (music.artworkUrl100.isNotEmpty()) {
+            holder.musicTitle.text = post.music.trackName
+            holder.musicArtist.text = post.music.artistName
+
+            if (post.music.artworkUrl100.isNotEmpty()) {
                 Glide.with(holder.itemView.context)
-                    .load(music.artworkUrl100)
+                    .load(post.music.artworkUrl100)
                     .into(holder.musicImage)
             }
         } else {
             holder.musicContainer.visibility = View.GONE
         }
 
+        // ✅ Firebase: Check like state
         PostHelper.isPostLiked(post.postId) { isLiked ->
             if (isLiked) likedPosts.add(post.postId)
             else likedPosts.remove(post.postId)
@@ -82,35 +119,167 @@ class FeedAdapter(
             )
         }
 
-        val isLiked = likedPosts.contains(post.postId)
-        holder.likeButton.setImageResource(
-            if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
+        // Check repost state via SharedPreferences
+        val context = holder.itemView.context
+        val prefs = context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+        if (isPostReposted(prefs, post.postId)) {
+            repostedPosts.add(post.postId)
+        }
+
+        val isReposted = repostedPosts.contains(post.postId)
+        holder.repostButton.setColorFilter(
+            if (isReposted) context.getColor(android.R.color.holo_green_dark)
+            else context.getColor(android.R.color.darker_gray)
         )
 
-        val profileClickListener = View.OnClickListener {
-            onUsernameClick?.invoke(post)
-        }
-        holder.userName.setOnClickListener(profileClickListener)
-        holder.profileImage.setOnClickListener(profileClickListener)
-
-        holder.likeButton.setOnClickListener {
-            val p = holder.bindingAdapterPosition
-            if (p != RecyclerView.NO_POSITION) toggleLike(posts[p], p, holder)
+        // ✅ Firebase: Like button
+        holder.likeButtonContainer.setOnClickListener {
+            val currentPosition = holder.bindingAdapterPosition
+            if (currentPosition != RecyclerView.NO_POSITION) {
+                toggleLike(posts[currentPosition], currentPosition, holder)
+            }
         }
 
-        holder.itemView.setOnClickListener { onPostClick(post) }
+        // Comment button — opens CommentActivity
+        holder.commentButtonContainer.setOnClickListener {
+            val intent = Intent(context, CommentActivity::class.java).apply {
+                putExtra("POST_ID", post.postId)
+                putExtra("POST_USERNAME", post.username)
+                putExtra("POST_CAPTION", post.caption)
+                putExtra("POST_TIMESTAMP", post.timestamp)
+                putExtra("COMMENT_COUNT", commentCounts[post.postId] ?: post.comments)
+            }
+            context.startActivity(intent)
+        }
+
+        // Repost button — SharedPreferences
+        holder.repostButtonContainer.setOnClickListener {
+            val currentPosition = holder.bindingAdapterPosition
+            if (currentPosition != RecyclerView.NO_POSITION) {
+                toggleRepost(posts[currentPosition], currentPosition, context)
+            }
+        }
+
+        holder.itemView.setOnClickListener {
+            onPostClick(post)
+        }
     }
 
     override fun getItemCount(): Int = posts.size
 
+    // ✅ Firebase like toggle
     private fun toggleLike(post: Post, position: Int, holder: PostViewHolder) {
         PostHelper.toggleLike(post.postId) { isLiked, newCount ->
-            if (isLiked) likedPosts.add(post.postId) else likedPosts.remove(post.postId)
+            if (isLiked) likedPosts.add(post.postId)
+            else likedPosts.remove(post.postId)
             likeCounts[post.postId] = newCount
             holder.likesCount.text = newCount.toString()
             holder.likeButton.setImageResource(
                 if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
             )
+        }
+    }
+
+    private fun toggleRepost(post: Post, position: Int, context: android.content.Context) {
+        val currentCount = repostCounts[post.postId] ?: post.reposts
+        val prefs = context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+
+        if (repostedPosts.contains(post.postId)) {
+            repostedPosts.remove(post.postId)
+            repostCounts[post.postId] = currentCount - 1
+            removeRepostFromProfile(prefs, post.postId)
+            Toast.makeText(context, "Repost removed", Toast.LENGTH_SHORT).show()
+        } else {
+            repostedPosts.add(post.postId)
+            repostCounts[post.postId] = currentCount + 1
+            saveRepostToProfile(prefs, post)
+            Toast.makeText(context, "Reposted!", Toast.LENGTH_SHORT).show()
+        }
+
+        notifyItemChanged(position)
+    }
+
+    private fun isPostReposted(prefs: android.content.SharedPreferences, postId: String): Boolean {
+        val repostCount = prefs.getInt("repost_count", 0)
+        for (i in 0 until repostCount) {
+            if (prefs.getString("repost_${i}_original_post_id", "") == postId) return true
+        }
+        return false
+    }
+
+    private fun saveRepostToProfile(prefs: android.content.SharedPreferences, post: Post) {
+        val currentUsername = prefs.getString("username", "User") ?: "User"
+        val repostCount = prefs.getInt("repost_count", 0)
+
+        prefs.edit().apply {
+            putString("repost_${repostCount}_id", "repost_${System.currentTimeMillis()}")
+            putString("repost_${repostCount}_original_post_id", post.postId)
+            putString("repost_${repostCount}_username", post.username)
+            putString("repost_${repostCount}_caption", post.caption)
+            putLong("repost_${repostCount}_timestamp", System.currentTimeMillis())
+            putInt("repost_${repostCount}_likes", post.likes)
+            putInt("repost_${repostCount}_comments", post.comments)
+            putString("repost_${repostCount}_reposted_by", currentUsername)
+
+            post.music?.let { music ->
+                putLong("repost_${repostCount}_music_trackId", music.trackId)
+                putString("repost_${repostCount}_music_trackName", music.trackName)
+                putString("repost_${repostCount}_music_artistName", music.artistName)
+                putString("repost_${repostCount}_music_artworkUrl", music.artworkUrl100)
+            }
+
+            putInt("repost_count", repostCount + 1)
+            apply()
+        }
+    }
+
+    private fun removeRepostFromProfile(prefs: android.content.SharedPreferences, postId: String) {
+        val repostCount = prefs.getInt("repost_count", 0)
+        var foundIndex = -1
+
+        for (i in 0 until repostCount) {
+            if (prefs.getString("repost_${i}_original_post_id", "") == postId) {
+                foundIndex = i
+                break
+            }
+        }
+
+        if (foundIndex != -1) {
+            prefs.edit().apply {
+                for (i in foundIndex until repostCount - 1) {
+                    putString("repost_${i}_id", prefs.getString("repost_${i + 1}_id", ""))
+                    putString("repost_${i}_original_post_id", prefs.getString("repost_${i + 1}_original_post_id", ""))
+                    putString("repost_${i}_username", prefs.getString("repost_${i + 1}_username", ""))
+                    putString("repost_${i}_caption", prefs.getString("repost_${i + 1}_caption", ""))
+                    putLong("repost_${i}_timestamp", prefs.getLong("repost_${i + 1}_timestamp", 0L))
+                    putInt("repost_${i}_likes", prefs.getInt("repost_${i + 1}_likes", 0))
+                    putInt("repost_${i}_comments", prefs.getInt("repost_${i + 1}_comments", 0))
+                    putString("repost_${i}_reposted_by", prefs.getString("repost_${i + 1}_reposted_by", ""))
+
+                    if (prefs.contains("repost_${i + 1}_music_trackId")) {
+                        putLong("repost_${i}_music_trackId", prefs.getLong("repost_${i + 1}_music_trackId", 0L))
+                        putString("repost_${i}_music_trackName", prefs.getString("repost_${i + 1}_music_trackName", ""))
+                        putString("repost_${i}_music_artistName", prefs.getString("repost_${i + 1}_music_artistName", ""))
+                        putString("repost_${i}_music_artworkUrl", prefs.getString("repost_${i + 1}_music_artworkUrl", ""))
+                    }
+                }
+
+                remove("repost_${repostCount - 1}_id")
+                remove("repost_${repostCount - 1}_original_post_id")
+                remove("repost_${repostCount - 1}_username")
+                remove("repost_${repostCount - 1}_caption")
+                remove("repost_${repostCount - 1}_timestamp")
+                remove("repost_${repostCount - 1}_likes")
+                remove("repost_${repostCount - 1}_comments")
+                remove("repost_${repostCount - 1}_reposted_by")
+                remove("repost_${repostCount - 1}_music_trackId")
+                remove("repost_${repostCount - 1}_music_trackName")
+                remove("repost_${repostCount - 1}_music_artistName")
+                remove("repost_${repostCount - 1}_music_artworkUrl")
+
+                putInt("repost_count", repostCount - 1)
+                apply()
+            }
         }
     }
 
