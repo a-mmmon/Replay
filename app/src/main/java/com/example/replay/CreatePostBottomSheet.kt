@@ -151,7 +151,7 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
         val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val username = prefs.getString("username", "uri") ?: "uri"
 
-        // Create post object
+        // ✅ FIXED: Create post object with ALL required fields
         val post = Post(
             postId = "post_${System.currentTimeMillis()}",
             userId = "current_user",
@@ -161,11 +161,15 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
             imageUrl = "",
             likes = 0,
             comments = 0,
+            reposts = 0,                      // ✅ ADDED
             timestamp = System.currentTimeMillis(),
-            music = selectedMusic
+            music = selectedMusic,
+            isRepost = false,                 // ✅ ADDED
+            originalPostId = "",              // ✅ ADDED
+            repostedByUsername = ""           // ✅ ADDED
         )
 
-        // ✅ SAVE POST TO SHAREDPREFERENCES WITH MUSIC
+        // Save post to SharedPreferences with music
         savePost(post)
 
         // Show success message
@@ -188,7 +192,7 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
         editor.putLong("post_${postCount}_timestamp", post.timestamp)
         editor.putInt("post_${postCount}_likes", post.likes)
 
-        // ✅ FIXED: Save music if present
+        // Save music if present
         if (post.music != null) {
             editor.putLong("post_${postCount}_music_trackId", post.music.trackId)
             editor.putString("post_${postCount}_music_trackName", post.music.trackName)

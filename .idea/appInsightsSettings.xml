@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.replay" />
+                  <option name="mobileSdkAppId" value="1:515998752172:android:ceffba271d28963c35ae09" />
+                  <option name="projectId" value="replay-a1769" />
+                  <option name="projectNumber" value="515998752172" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

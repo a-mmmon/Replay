@@ -107,7 +107,7 @@ class FeedAdapter(
             if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
         )
 
-        // ✅ FIX: Check if user has reposted using SharedPreferences
+        // Check if user has reposted using SharedPreferences
         val context = holder.itemView.context
         val prefs = context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
         val hasReposted = isPostReposted(prefs, post.postId)
@@ -133,16 +133,27 @@ class FeedAdapter(
             }
         }
 
+        // ✅ UPDATED: Comment button with logging
         holder.commentButtonContainer.setOnClickListener {
             val context = holder.itemView.context
-            val intent = Intent(context, CommentActivity::class.java).apply {
-                putExtra("POST_ID", post.postId)
-                putExtra("POST_USERNAME", post.username)
-                putExtra("POST_CAPTION", post.caption)
-                putExtra("POST_TIMESTAMP", post.timestamp)
-                putExtra("COMMENT_COUNT", commentCounts[post.postId] ?: post.comments)
+
+            // Add logging
+            android.util.Log.d("FeedAdapter", "Comment clicked - postId: ${post.postId}")
+
+            try {
+                val intent = Intent(context, CommentActivity::class.java).apply {
+                    putExtra("POST_ID", post.postId)
+                    putExtra("POST_USERNAME", post.username)
+                    putExtra("POST_CAPTION", post.caption)
+                    putExtra("POST_TIMESTAMP", post.timestamp)
+                    putExtra("COMMENT_COUNT", commentCounts[post.postId] ?: post.comments)
+                }
+                context.startActivity(intent)
+                android.util.Log.d("FeedAdapter", "Intent started successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("FeedAdapter", "Error starting CommentActivity", e)
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
-            context.startActivity(intent)
         }
 
         holder.repostButtonContainer.setOnClickListener {
@@ -195,7 +206,6 @@ class FeedAdapter(
         notifyItemChanged(position)
     }
 
-    // ✅ FIX: Check if post is already reposted
     private fun isPostReposted(prefs: android.content.SharedPreferences, postId: String): Boolean {
         val repostCount = prefs.getInt("repost_count", 0)
         for (i in 0 until repostCount) {
@@ -207,7 +217,6 @@ class FeedAdapter(
         return false
     }
 
-    // ✅ FIX: Improved save repost function
     private fun saveRepostToProfile(prefs: android.content.SharedPreferences, post: Post) {
         val currentUsername = prefs.getString("username", "User") ?: "User"
         val repostCount = prefs.getInt("repost_count", 0)
