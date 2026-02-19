@@ -119,7 +119,11 @@ class FeedAdapter(
             )
         }
 
+<<<<<<< HEAD
         // Check repost state via SharedPreferences
+=======
+        // Check if user has reposted using SharedPreferences
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
         val context = holder.itemView.context
         val prefs = context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
         if (isPostReposted(prefs, post.postId)) {
@@ -140,6 +144,7 @@ class FeedAdapter(
             }
         }
 
+<<<<<<< HEAD
         // Comment button — opens CommentActivity
         holder.commentButtonContainer.setOnClickListener {
             val intent = Intent(context, CommentActivity::class.java).apply {
@@ -148,8 +153,29 @@ class FeedAdapter(
                 putExtra("POST_CAPTION", post.caption)
                 putExtra("POST_TIMESTAMP", post.timestamp)
                 putExtra("COMMENT_COUNT", commentCounts[post.postId] ?: post.comments)
+=======
+        // ✅ UPDATED: Comment button with logging
+        holder.commentButtonContainer.setOnClickListener {
+            val context = holder.itemView.context
+
+            // Add logging
+            android.util.Log.d("FeedAdapter", "Comment clicked - postId: ${post.postId}")
+
+            try {
+                val intent = Intent(context, CommentActivity::class.java).apply {
+                    putExtra("POST_ID", post.postId)
+                    putExtra("POST_USERNAME", post.username)
+                    putExtra("POST_CAPTION", post.caption)
+                    putExtra("POST_TIMESTAMP", post.timestamp)
+                    putExtra("COMMENT_COUNT", commentCounts[post.postId] ?: post.comments)
+                }
+                context.startActivity(intent)
+                android.util.Log.d("FeedAdapter", "Intent started successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("FeedAdapter", "Error starting CommentActivity", e)
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
             }
-            context.startActivity(intent)
         }
 
         // Repost button — SharedPreferences

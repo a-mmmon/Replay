@@ -7,21 +7,43 @@ import com.google.firebase.database.FirebaseDatabase
 
 object PostHelper {
 
+<<<<<<< HEAD
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
 
     // ─── Save post to Firebase ────────────────────────────────────────────────
+=======
+    /**
+     * Save a post to SharedPreferences
+     */
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
     fun savePost(context: Context, caption: String, music: ITunesSong?) {
         val userId = auth.currentUser?.uid ?: run {
             Log.e("PostHelper", "User not logged in")
             return
         }
 
+<<<<<<< HEAD
         // Get username from Firebase
         database.getReference("users").child(userId).get()
             .addOnSuccessListener { snapshot ->
                 val profile = snapshot.getValue(UserProfile::class.java)
                 val username = profile?.username ?: auth.currentUser?.email?.substringBefore("@") ?: "User"
+=======
+            val postId = "post_${System.currentTimeMillis()}"
+            val timestamp = System.currentTimeMillis()
+
+            // Save post data
+            editor.putString("post_${postCount}_id", postId)
+            editor.putString("post_${postCount}_caption", caption)
+            editor.putLong("post_${postCount}_timestamp", timestamp)
+            editor.putInt("post_${postCount}_likes", 0)
+            editor.putInt("post_${postCount}_comments", 0)
+            editor.putInt("post_${postCount}_reposts", 0)
+            editor.putBoolean("post_${postCount}_isRepost", false)
+            editor.putString("post_${postCount}_originalPostId", "")
+            editor.putString("post_${postCount}_repostedByUsername", "")
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
 
                 val postId = "post_${System.currentTimeMillis()}"
                 val post = Post(
@@ -56,6 +78,7 @@ object PostHelper {
     fun toggleLike(postId: String, onComplete: (isLiked: Boolean, newCount: Int) -> Unit) {
         val userId = auth.currentUser?.uid ?: return
 
+<<<<<<< HEAD
         val likeRef = database.getReference("likes").child(postId).child(userId)
         val postRef = database.getReference("posts").child(postId)
 
@@ -100,5 +123,79 @@ object PostHelper {
     // ─── Load posts (kept for backward compat) ────────────────────────────────
     fun loadPosts(context: Context, username: String): List<Post> {
         return emptyList() // Now handled by HomeFragment via Firebase
+=======
+            Log.d("PostHelper", "Saved post $postCount with music: ${music != null}")
+
+        } catch (e: Exception) {
+            Log.e("PostHelper", "Error saving post", e)
+        }
+    }
+
+    /**
+     * Load all posts
+     */
+    fun loadPosts(context: Context, username: String): List<Post> {
+        val posts = mutableListOf<Post>()
+
+        try {
+            val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+            val postCount = prefs.getInt("post_count", 0)
+
+            for (i in 0 until postCount) {
+                val postId = prefs.getString("post_${i}_id", null)
+                val caption = prefs.getString("post_${i}_caption", null)
+                val timestamp = prefs.getLong("post_${i}_timestamp", 0L)
+                val likes = prefs.getInt("post_${i}_likes", 0)
+                val comments = prefs.getInt("post_${i}_comments", 0)
+                val reposts = prefs.getInt("post_${i}_reposts", 0)
+                val isRepost = prefs.getBoolean("post_${i}_isRepost", false)
+                val originalPostId = prefs.getString("post_${i}_originalPostId", "") ?: ""
+                val repostedByUsername = prefs.getString("post_${i}_repostedByUsername", "") ?: ""
+
+                // Load music if exists
+                val music = if (prefs.contains("post_${i}_music_trackId")) {
+                    ITunesSong(
+                        trackId = prefs.getLong("post_${i}_music_trackId", 0L),
+                        trackName = prefs.getString("post_${i}_music_trackName", "") ?: "",
+                        artistName = prefs.getString("post_${i}_music_artistName", "") ?: "",
+                        artworkUrl100 = prefs.getString("post_${i}_music_artworkUrl", "") ?: "",
+                        previewUrl = prefs.getString("post_${i}_music_previewUrl", "") ?: "",
+                        collectionName = prefs.getString("post_${i}_music_collectionName", "") ?: "",
+                        trackViewUrl = prefs.getString("post_${i}_music_trackViewUrl", "") ?: "",
+                        releaseDate = prefs.getString("post_${i}_music_releaseDate", "") ?: ""
+                    )
+                } else {
+                    null
+                }
+
+                if (postId != null && caption != null) {
+                    posts.add(
+                        Post(
+                            postId = postId,
+                            userId = "current_user",
+                            username = username,
+                            caption = caption,
+                            likes = likes,
+                            comments = comments,
+                            reposts = reposts,
+                            timestamp = timestamp,
+                            music = music,
+                            isRepost = isRepost,
+                            originalPostId = originalPostId,
+                            repostedByUsername = repostedByUsername
+                        )
+                    )
+
+                }
+            }
+
+            Log.d("PostHelper", "Loaded ${posts.size} posts")
+
+        } catch (e: Exception) {
+            Log.e("PostHelper", "Error loading posts", e)
+        }
+
+        return posts
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
     }
 }

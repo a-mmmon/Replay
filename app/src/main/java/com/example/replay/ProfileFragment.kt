@@ -85,6 +85,10 @@ class ProfileFragment : Fragment() {
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
                     val profile = snapshot.getValue(UserProfile::class.java)
                     if (profile != null) {
                         usernameText?.text = profile.username.ifEmpty { "User" }
@@ -93,8 +97,17 @@ class ProfileFragment : Fragment() {
                         handleText?.text = handle
                         followersCount?.text = profile.followers.toString()
                         followingCount?.text = profile.following.toString()
+<<<<<<< HEAD
                     } else {
                         createUserProfile(userId)
+=======
+                        Log.d("ProfileFragment", "Profile loaded: ${profile.username}")
+                    } else {
+                        val email = auth.currentUser?.email ?: "user@email.com"
+                        val fallbackName = email.substringBefore("@")
+                        usernameText?.text = fallbackName
+                        handleText?.text = "@$fallbackName"
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
                     }
                 }
 
@@ -132,13 +145,15 @@ class ProfileFragment : Fragment() {
         val tabs = tabLayout ?: return
         tabs.removeAllTabs()
         tabs.addTab(tabs.newTab().setText("Posts"))
+        tabs.addTab(tabs.newTab().setText("Reposts"))
         tabs.addTab(tabs.newTab().setText("Likes"))
 
         tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 when (tab?.position) {
                     0 -> loadUserPosts()
-                    1 -> loadUserLikes()
+                    1 -> loadUserReposts()
+                    2 -> loadUserLikes()
                 }
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
@@ -182,7 +197,16 @@ class ProfileFragment : Fragment() {
                     for (child in snapshot.children) {
                         child.getValue(Post::class.java)?.let { userPosts.add(it) }
                     }
+<<<<<<< HEAD
                     userPosts.sortByDescending { it.timestamp }
+=======
+
+                    if (userPosts.isEmpty()) {
+                        val username = usernameText?.text?.toString() ?: "User"
+                        userPosts.addAll(getSampleUserPosts(username))
+                    }
+
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
                     postsAdapter?.notifyDataSetChanged()
                     tabLayout?.getTabAt(0)?.text = "Posts (${userPosts.size})"
                 }
@@ -193,9 +217,41 @@ class ProfileFragment : Fragment() {
             })
     }
 
+<<<<<<< HEAD
+=======
+    private fun loadUserReposts() {
+        userPosts.clear()
+        val userId = auth.currentUser?.uid ?: return
+
+        database.getReference("posts")
+            .orderByChild("userId")
+            .equalTo(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return
+
+                    for (child in snapshot.children) {
+                        val post = child.getValue(Post::class.java)
+                        if (post != null && post.isRepost) {
+                            userPosts.add(post)
+                        }
+                    }
+
+                    postsAdapter?.notifyDataSetChanged()
+                    tabLayout?.getTabAt(1)?.text = "Reposts (${userPosts.size})"
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ProfileFragment", "Failed to load reposts: ${error.message}")
+                }
+            })
+    }
+
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
     private fun loadUserLikes() {
         val userId = auth.currentUser?.uid ?: return
 
+<<<<<<< HEAD
         // PostHelper writes likes to userLikes/{userId}/{postId}
         database.getReference("userLikes").child(userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -244,5 +300,59 @@ class ProfileFragment : Fragment() {
                     Log.e("ProfileFragment", "Failed to load likes: ${error.message}")
                 }
             })
+=======
+    private fun getSampleUserPosts(username: String): List<Post> {
+        return listOf(
+            Post(
+                postId = "sample_1",
+                userId = auth.currentUser?.uid ?: "current_user",
+                username = username,
+                caption = "Just shared my favorite playlist! 🎵",
+                likes = 42,
+                comments = 8,
+                timestamp = System.currentTimeMillis() - 3600000,
+                music = null,
+                isRepost = false
+            )
+        )
+    }
+
+    private fun getSampleLikedPosts(): List<Post> {
+        return listOf(
+            Post(
+                postId = "liked_1",
+                userId = "user1",
+                username = "Taylor Swift",
+                caption = "Such a fun night making music! ✨",
+                likes = 5,
+                comments = 2,
+                timestamp = System.currentTimeMillis() - 10800000,
+                music = null,
+                isRepost = false
+            ),
+            Post(
+                postId = "liked_2",
+                userId = "user2",
+                username = "BTS",
+                caption = "Have a wonderful concert! ✨",
+                likes = 1000,
+                comments = 150,
+                timestamp = System.currentTimeMillis() - 3600000,
+                music = null,
+                isRepost = false
+            ),
+            Post(
+                postId = "liked_3",
+                userId = "user3",
+                username = "Black Pink",
+                caption = "How amazing is this new album! ✨",
+                likes = 2000,
+                comments = 200,
+                timestamp = System.currentTimeMillis() - 86400000,
+                music = null,
+                isRepost = false
+            )
+        )
+>>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
     }
 }

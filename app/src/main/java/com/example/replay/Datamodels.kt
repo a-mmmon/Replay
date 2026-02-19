@@ -48,7 +48,6 @@ data class UserProfile(
     val bio: String = "",
     val followers: Int = 0,
     val following: Int = 0
-    // NOTE: No-arg constructor is required by Firebase — default values provide this ✅
 ) : Parcelable
 
 // ============================================
