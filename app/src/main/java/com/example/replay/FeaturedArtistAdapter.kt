@@ -5,10 +5,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.imageview.ShapeableImageView
 
 class FeaturedArtistAdapter(
-    private val artists: List<String>,
+    private val artists: List<Artist>,
     private val onArtistClick: (String) -> Unit
 ) : RecyclerView.Adapter<FeaturedArtistAdapter.ArtistViewHolder>() {
 
@@ -25,13 +26,15 @@ class FeaturedArtistAdapter(
 
     override fun onBindViewHolder(holder: ArtistViewHolder, position: Int) {
         val artist = artists[position]
-        holder.artistName.text = artist
+        holder.artistName.text = artist.name
 
-        // Set placeholder image (you can customize per artist if needed)
-        holder.artistImage.setImageResource(R.drawable.ic_android_placeholder)
+        Glide.with(holder.itemView.context)
+            .load(artist.imageUrl)
+            .placeholder(R.drawable.ic_android_placeholder)
+            .into(holder.artistImage)
 
         holder.itemView.setOnClickListener {
-            onArtistClick(artist)
+            onArtistClick(artist.name)
         }
     }
 
