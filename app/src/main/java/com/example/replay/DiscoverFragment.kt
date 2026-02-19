@@ -1,5 +1,6 @@
 package com.example.replay
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,6 +12,8 @@ import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.tabs.TabLayout
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -21,277 +24,276 @@ import retrofit2.Response
 
 class DiscoverFragment : Fragment() {
 
-    // Search results
     private lateinit var searchRecyclerView: RecyclerView
     private lateinit var searchAdapter: DiscoverSongAdapter
     private val searchResults = mutableListOf<ITunesSong>()
 
-    // Featured Artists
+    private lateinit var userSearchRecycler: RecyclerView
+    private lateinit var userSearchAdapter: UsersAdapter
+    private val userResults = mutableListOf<UserProfile>()
+
     private lateinit var featuredArtistsRecycler: RecyclerView
     private lateinit var featuredArtistsAdapter: FeaturedArtistAdapter
 
-    // Trending Songs
     private lateinit var trendingSongsRecycler: RecyclerView
     private lateinit var trendingSongsAdapter: TrendingSongAdapter
     private val trendingSongs = mutableListOf<ITunesSong>()
 
-    // Popular Songs
     private lateinit var popularSongsRecycler: RecyclerView
     private lateinit var popularSongsAdapter: PopularSongAdapter
     private val popularSongs = mutableListOf<ITunesSong>()
 
-    // Section headers
     private lateinit var searchResultsHeader: TextView
     private lateinit var featuredArtistsHeader: TextView
     private lateinit var trendingSongsHeader: TextView
     private lateinit var popularSongsHeader: TextView
+    private lateinit var filterTabLayout: TabLayout
 
-    // Firebase
     private val database = FirebaseDatabase.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    private var currentFilter = "Songs"
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_discover, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         initializeViews(view)
         setupRecyclerViews()
+        setupFilterTabs()
         setupSearchView(view)
         loadInitialContent()
     }
 
     private fun initializeViews(view: View) {
-        // Search results
         searchRecyclerView = view.findViewById(R.id.searchResultsRecycler)
         searchResultsHeader = view.findViewById(R.id.searchResultsHeader)
-
-        // Featured Artists
+        userSearchRecycler = view.findViewById(R.id.userSearchRecycler)
         featuredArtistsRecycler = view.findViewById(R.id.featuredArtistsRecycler)
         featuredArtistsHeader = view.findViewById(R.id.featuredArtistsHeader)
-
-        // Trending Songs
         trendingSongsRecycler = view.findViewById(R.id.trendingSongsRecycler)
         trendingSongsHeader = view.findViewById(R.id.trendingSongsHeader)
-
-        // Popular Songs
         popularSongsRecycler = view.findViewById(R.id.popularSongsRecycler)
         popularSongsHeader = view.findViewById(R.id.popularSongsHeader)
+        filterTabLayout = view.findViewById(R.id.filterTabLayout)
+    }
+
+    private fun setupFilterTabs() {
+        listOf("Songs", "Artists", "Playlists", "Profiles").forEach { label ->
+            filterTabLayout.addTab(filterTabLayout.newTab().setText(label))
+        }
+
+        filterTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                currentFilter = tab?.text.toString()
+                val query = view?.findViewById<SearchView>(R.id.searchView)?.query?.toString() ?: ""
+                if (query.isNotBlank()) performSearch(query)
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
     }
 
     private fun setupRecyclerViews() {
-        // Search Results (Vertical)
-        searchAdapter = DiscoverSongAdapter(searchResults) { song ->
-            showMusicBottomSheet(song)
-        }
+        searchAdapter = DiscoverSongAdapter(searchResults) { song -> showMusicBottomSheet(song) }
         searchRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         searchRecyclerView.adapter = searchAdapter
 
-        // Featured Artists (Horizontal)
-        val artistNames = listOf(
-            "Taylor Swift", "Ed Sheeran", "Ariana Grande",
-            "The Weeknd", "Billie Eilish", "Drake"
-        )
-        featuredArtistsAdapter = FeaturedArtistAdapter(artistNames) { artistName ->
-            searchSongs(artistName)
+        userSearchAdapter = UsersAdapter(userResults) { user ->
+            val intent = Intent(requireContext(), UserProfileActivity::class.java)
+            intent.putExtra("user_id", user.userId)
+            intent.putExtra("username", user.username)
+            startActivity(intent)
         }
-        featuredArtistsRecycler.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.HORIZONTAL,
-            false
-        )
+        userSearchRecycler.layoutManager = LinearLayoutManager(requireContext())
+        userSearchRecycler.adapter = userSearchAdapter
+
+        val artistNames = listOf("Taylor Swift", "Ed Sheeran", "Ariana Grande", "The Weeknd", "Billie Eilish", "Drake")
+        featuredArtistsAdapter = FeaturedArtistAdapter(artistNames) { artistName -> searchSongs(artistName) }
+        featuredArtistsRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         featuredArtistsRecycler.adapter = featuredArtistsAdapter
 
-        // Trending Songs (Horizontal)
-        trendingSongsAdapter = TrendingSongAdapter(trendingSongs) { song ->
-            showMusicBottomSheet(song)
-        }
-        trendingSongsRecycler.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.HORIZONTAL,
-            false
-        )
+        trendingSongsAdapter = TrendingSongAdapter(trendingSongs) { song -> showMusicBottomSheet(song) }
+        trendingSongsRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         trendingSongsRecycler.adapter = trendingSongsAdapter
 
-        // Popular Songs (Horizontal)
-        popularSongsAdapter = PopularSongAdapter(popularSongs) { song ->
-            showMusicBottomSheet(song)
-        }
-        popularSongsRecycler.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.HORIZONTAL,
-            false
-        )
+        popularSongsAdapter = PopularSongAdapter(popularSongs) { song -> showMusicBottomSheet(song) }
+        popularSongsRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         popularSongsRecycler.adapter = popularSongsAdapter
     }
 
     private fun setupSearchView(view: View) {
         val searchView = view.findViewById<SearchView>(R.id.searchView)
+        searchView.queryHint = "Search songs, artists, people..."
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                if (!query.isNullOrBlank()) {
-                    searchSongs(query)
-                }
+                if (!query.isNullOrBlank()) performSearch(query)
                 searchView.clearFocus()
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText.isNullOrEmpty()) {
+                    filterTabLayout.visibility = View.GONE
                     searchResultsHeader.visibility = View.GONE
                     searchRecyclerView.visibility = View.GONE
+                    userSearchRecycler.visibility = View.GONE
+                    showBrowseContent(true)
+                } else {
+                    filterTabLayout.visibility = View.VISIBLE
+                    showBrowseContent(false)
+                    if (newText.length >= 2) performSearch(newText)
                 }
                 return false
             }
         })
     }
 
+    private fun performSearch(query: String) {
+        when (currentFilter) {
+            "Profiles" -> searchUsers(query)
+            "Artists" -> searchSongs(query, isArtistSearch = true)
+            else -> searchSongs(query)
+        }
+    }
+
+    private fun searchUsers(query: String) {
+        searchRecyclerView.visibility = View.GONE
+        userSearchRecycler.visibility = View.VISIBLE
+        searchResultsHeader.visibility = View.VISIBLE
+        searchResultsHeader.text = "People"
+
+        val currentUserId = auth.currentUser?.uid ?: ""
+
+        database.getReference("users")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return
+                    userResults.clear()
+                    for (child in snapshot.children) {
+                        val user = child.getValue(UserProfile::class.java) ?: continue
+                        if (user.userId == currentUserId) continue
+                        if (user.username.lowercase().contains(query.lowercase()) ||
+                            user.handle.lowercase().contains(query.lowercase())) {
+                            userResults.add(user)
+                        }
+                    }
+                    userSearchAdapter.updateUsers(userResults)
+                    searchResultsHeader.text = "People (${userResults.size})"
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("DiscoverFragment", "User search failed: ${error.message}")
+                }
+            })
+    }
+
+    private fun searchSongs(query: String, isArtistSearch: Boolean = false) {
+        userSearchRecycler.visibility = View.GONE
+        searchRecyclerView.visibility = View.VISIBLE
+        searchResultsHeader.visibility = View.VISIBLE
+        searchResultsHeader.text = if (isArtistSearch) "Artists" else "Songs"
+
+        RetrofitClient.api.searchSongs(query)
+            .enqueue(object : Callback<ITunesResponse> {
+                override fun onResponse(call: Call<ITunesResponse>, response: Response<ITunesResponse>) {
+                    if (!isAdded) return
+                    if (response.isSuccessful) {
+                        val results = response.body()?.results ?: emptyList()
+                        searchResults.clear()
+                        searchResults.addAll(results)
+                        searchAdapter.notifyDataSetChanged()
+                        searchResultsHeader.text = "${if (isArtistSearch) "Artists" else "Songs"} (${results.size})"
+                    }
+                }
+                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
+                    if (!isAdded) return
+                    Toast.makeText(requireContext(), "Network error: ${t.localizedMessage}", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    private fun showBrowseContent(show: Boolean) {
+        val visibility = if (show) View.VISIBLE else View.GONE
+        featuredArtistsHeader.visibility = visibility
+        featuredArtistsRecycler.visibility = visibility
+        trendingSongsHeader.visibility = visibility
+        trendingSongsRecycler.visibility = visibility
+        popularSongsHeader.visibility = visibility
+        popularSongsRecycler.visibility = visibility
+    }
+
     private fun loadInitialContent() {
-        // Try loading from Firebase first, then from API
         loadTrendingSongsFromFirebase()
         loadPopularSongsFromFirebase()
     }
 
-    // ✅ NEW: Load trending songs from Firebase (cached from previous searches)
     private fun loadTrendingSongsFromFirebase() {
-        database.getReference("trending-songs")
-            .limitToFirst(20)
+        database.getReference("trending-songs").limitToFirst(20)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val firebaseSongs = mutableListOf<ITunesSong>()
-                    for (child in snapshot.children) {
-                        val song = child.getValue(ITunesSong::class.java)
-                        song?.let { firebaseSongs.add(it) }
-                    }
-
-                    if (firebaseSongs.isNotEmpty()) {
+                    val songs = snapshot.children.mapNotNull { it.getValue(ITunesSong::class.java) }
+                    if (songs.isNotEmpty()) {
                         trendingSongs.clear()
-                        trendingSongs.addAll(firebaseSongs)
+                        trendingSongs.addAll(songs)
                         trendingSongsAdapter.notifyDataSetChanged()
-                        Log.d("DiscoverFragment", "Loaded ${firebaseSongs.size} trending songs from Firebase")
-                    } else {
-                        // No cached songs, fetch from API
-                        loadTrendingSongsFromAPI()
-                    }
+                    } else loadTrendingSongsFromAPI()
                 }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("DiscoverFragment", "Firebase error: ${error.message}")
-                    loadTrendingSongsFromAPI()
-                }
+                override fun onCancelled(error: DatabaseError) { loadTrendingSongsFromAPI() }
             })
     }
 
     private fun loadTrendingSongsFromAPI() {
-        RetrofitClient.api.searchSongs("trending 2024", limit = 20)
-            .enqueue(object : Callback<ITunesResponse> {
-                override fun onResponse(
-                    call: Call<ITunesResponse>,
-                    response: Response<ITunesResponse>
-                ) {
-                    if (response.isSuccessful) {
-                        val results = response.body()?.results ?: emptyList()
-                        if (results.isNotEmpty()) {
-                            trendingSongs.clear()
-                            trendingSongs.addAll(results)
-                            trendingSongsAdapter.notifyDataSetChanged()
-
-                            // Cache to Firebase
-                            cacheSongsToFirebase("trending-songs", results)
-                            Log.d("DiscoverFragment", "Loaded ${results.size} trending songs from API")
-                        } else {
-                            loadFallbackTrendingSongs()
-                        }
-                    } else {
-                        loadFallbackTrendingSongs()
-                    }
-                }
-
-                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
-                    Log.e("DiscoverFragment", "Failed to load trending songs from API", t)
-                    loadFallbackTrendingSongs()
-                }
-            })
+        RetrofitClient.api.searchSongs("trending 2024", limit = 20).enqueue(object : Callback<ITunesResponse> {
+            override fun onResponse(call: Call<ITunesResponse>, response: Response<ITunesResponse>) {
+                val results = response.body()?.results ?: return
+                if (results.isNotEmpty()) {
+                    trendingSongs.clear()
+                    trendingSongs.addAll(results)
+                    trendingSongsAdapter.notifyDataSetChanged()
+                    cacheSongsToFirebase("trending-songs", results)
+                } else loadFallbackTrendingSongs()
+            }
+            override fun onFailure(call: Call<ITunesResponse>, t: Throwable) { loadFallbackTrendingSongs() }
+        })
     }
 
-    // ✅ NEW: Load popular songs from Firebase
     private fun loadPopularSongsFromFirebase() {
-        database.getReference("popular-songs")
-            .limitToFirst(20)
+        database.getReference("popular-songs").limitToFirst(20)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val firebaseSongs = mutableListOf<ITunesSong>()
-                    for (child in snapshot.children) {
-                        val song = child.getValue(ITunesSong::class.java)
-                        song?.let { firebaseSongs.add(it) }
-                    }
-
-                    if (firebaseSongs.isNotEmpty()) {
+                    val songs = snapshot.children.mapNotNull { it.getValue(ITunesSong::class.java) }
+                    if (songs.isNotEmpty()) {
                         popularSongs.clear()
-                        popularSongs.addAll(firebaseSongs)
+                        popularSongs.addAll(songs)
                         popularSongsAdapter.notifyDataSetChanged()
-                        Log.d("DiscoverFragment", "Loaded ${firebaseSongs.size} popular songs from Firebase")
-                    } else {
-                        loadPopularSongsFromAPI()
-                    }
+                    } else loadPopularSongsFromAPI()
                 }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("DiscoverFragment", "Firebase error: ${error.message}")
-                    loadPopularSongsFromAPI()
-                }
+                override fun onCancelled(error: DatabaseError) { loadPopularSongsFromAPI() }
             })
     }
 
     private fun loadPopularSongsFromAPI() {
-        RetrofitClient.api.searchSongs("pop hits 2024", limit = 20)
-            .enqueue(object : Callback<ITunesResponse> {
-                override fun onResponse(
-                    call: Call<ITunesResponse>,
-                    response: Response<ITunesResponse>
-                ) {
-                    if (response.isSuccessful) {
-                        val results = response.body()?.results ?: emptyList()
-                        if (results.isNotEmpty()) {
-                            popularSongs.clear()
-                            popularSongs.addAll(results)
-                            popularSongsAdapter.notifyDataSetChanged()
-
-                            // Cache to Firebase
-                            cacheSongsToFirebase("popular-songs", results)
-                            Log.d("DiscoverFragment", "Loaded ${results.size} popular songs from API")
-                        } else {
-                            loadFallbackPopularSongs()
-                        }
-                    } else {
-                        loadFallbackPopularSongs()
-                    }
-                }
-
-                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
-                    Log.e("DiscoverFragment", "Failed to load popular songs from API", t)
-                    loadFallbackPopularSongs()
-                }
-            })
+        RetrofitClient.api.searchSongs("pop hits 2024", limit = 20).enqueue(object : Callback<ITunesResponse> {
+            override fun onResponse(call: Call<ITunesResponse>, response: Response<ITunesResponse>) {
+                val results = response.body()?.results ?: return
+                if (results.isNotEmpty()) {
+                    popularSongs.clear()
+                    popularSongs.addAll(results)
+                    popularSongsAdapter.notifyDataSetChanged()
+                    cacheSongsToFirebase("popular-songs", results)
+                } else loadFallbackPopularSongs()
+            }
+            override fun onFailure(call: Call<ITunesResponse>, t: Throwable) { loadFallbackPopularSongs() }
+        })
     }
 
-    // ✅ NEW: Cache songs to Firebase for offline access
     private fun cacheSongsToFirebase(category: String, songs: List<ITunesSong>) {
         val ref = database.getReference(category)
-
-        // Clear old cache
         ref.removeValue().addOnSuccessListener {
-            // Add new songs
-            songs.forEach { song ->
-                ref.child(song.trackId.toString()).setValue(song)
-            }
-            Log.d("DiscoverFragment", "Cached ${songs.size} songs to Firebase/$category")
+            songs.forEach { ref.child(it.trackId.toString()).setValue(it) }
         }
     }
 
@@ -299,56 +301,12 @@ class DiscoverFragment : Fragment() {
         trendingSongs.clear()
         trendingSongs.addAll(SampleData.sampleSongs)
         trendingSongsAdapter.notifyDataSetChanged()
-        Log.d("DiscoverFragment", "Loaded ${trendingSongs.size} trending songs from fallback data")
     }
 
     private fun loadFallbackPopularSongs() {
         popularSongs.clear()
         popularSongs.addAll(SampleData.sampleSongs.reversed())
         popularSongsAdapter.notifyDataSetChanged()
-        Log.d("DiscoverFragment", "Loaded ${popularSongs.size} popular songs from fallback data")
-    }
-
-    private fun searchSongs(query: String) {
-        RetrofitClient.api.searchSongs(query)
-            .enqueue(object : Callback<ITunesResponse> {
-                override fun onResponse(
-                    call: Call<ITunesResponse>,
-                    response: Response<ITunesResponse>
-                ) {
-                    if (response.isSuccessful) {
-                        val results = response.body()?.results ?: emptyList()
-                        searchResults.clear()
-                        searchResults.addAll(results)
-                        searchAdapter.notifyDataSetChanged()
-
-                        // Show search results section
-                        searchResultsHeader.visibility = View.VISIBLE
-                        searchRecyclerView.visibility = View.VISIBLE
-
-                        Toast.makeText(
-                            requireContext(),
-                            "Found ${results.size} songs",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to load songs",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
-                    t.printStackTrace()
-                    Toast.makeText(
-                        requireContext(),
-                        "Network error: ${t.localizedMessage}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            })
     }
 
     private fun showMusicBottomSheet(song: ITunesSong) {
@@ -364,24 +322,13 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun addToFavorites(song: ITunesSong) {
-        // Save to local favorites manager
         FavoriteManager.addToFavorites(song)
-
-        // Also save to Firebase for cloud sync
-        val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        val userId = auth.currentUser?.uid
         if (userId != null) {
-            database.getReference("user-library")
-                .child(userId)
-                .child("favorites")
-                .child(song.trackId.toString())
-                .setValue(song)
-                .addOnSuccessListener {
-                    Toast.makeText(requireContext(), "Added to favorites!", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    Log.e("DiscoverFragment", "Failed to save to Firebase", e)
-                    Toast.makeText(requireContext(), "Added to local favorites", Toast.LENGTH_SHORT).show()
-                }
+            database.getReference("user-library").child(userId).child("favorites")
+                .child(song.trackId.toString()).setValue(song)
+                .addOnSuccessListener { Toast.makeText(requireContext(), "Added to favorites!", Toast.LENGTH_SHORT).show() }
+                .addOnFailureListener { Toast.makeText(requireContext(), "Added locally", Toast.LENGTH_SHORT).show() }
         } else {
             Toast.makeText(requireContext(), "Added to favorites!", Toast.LENGTH_SHORT).show()
         }
@@ -389,27 +336,16 @@ class DiscoverFragment : Fragment() {
 
     private fun openMusicApp(app: String, song: ITunesSong) {
         try {
-            val intent = when (app) {
-                "spotify" -> {
-                    android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                        data = android.net.Uri.parse("https://open.spotify.com/search/${song.trackName} ${song.artistName}")
-                    }
-                }
-                "apple_music" -> {
-                    android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                        data = android.net.Uri.parse(song.trackViewUrl)
-                    }
-                }
-                "youtube_music" -> {
-                    android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                        data = android.net.Uri.parse("https://music.youtube.com/search?q=${song.trackName} ${song.artistName}")
-                    }
-                }
+            val uri = when (app) {
+                "spotify" -> "https://open.spotify.com/search/${song.trackName} ${song.artistName}"
+                "apple_music" -> song.trackViewUrl
+                "youtube_music" -> "https://music.youtube.com/search?q=${song.trackName} ${song.artistName}"
                 else -> return
             }
-            startActivity(intent)
+            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                data = android.net.Uri.parse(uri)
+            })
         } catch (e: Exception) {
-            Log.e("DiscoverFragment", "Error opening music app", e)
             Toast.makeText(requireContext(), "Could not open app", Toast.LENGTH_SHORT).show()
         }
     }

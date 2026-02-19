@@ -17,7 +17,7 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="8dp"
             app:cardCornerRadius="24dp"
             app:cardElevation="2dp"
             app:cardBackgroundColor="@android:color/white">
@@ -27,12 +27,26 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:iconifiedByDefault="false"
-                app:queryHint="Search for songs, artists..."
+                app:queryHint="Search songs, artists, people..."
                 android:background="@android:color/transparent" />
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Search Results Section -->
+        <!-- Filter Tabs (Songs / Artists / Playlists / Profiles) -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/filterTabLayout"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"
+            app:tabMode="scrollable"
+            app:tabGravity="start"
+            app:tabIndicatorColor="#6750A4"
+            app:tabSelectedTextColor="#6750A4"
+            app:tabTextColor="@android:color/darker_gray"
+            app:tabBackground="@android:color/transparent" />
+
+        <!-- Search Results Header -->
         <TextView
             android:id="@+id/searchResultsHeader"
             android:layout_width="wrap_content"
@@ -46,6 +60,7 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
+        <!-- Song Search Results -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/searchResultsRecycler"
             android:layout_width="match_parent"
@@ -55,6 +70,15 @@
             android:layout_marginBottom="16dp"
             tools:visibility="visible"
             tools:listitem="@layout/item_song_vertical" />
+
+        <!-- User/Profile Search Results -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/userSearchRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="16dp" />
 
         <!-- Featured Artists Section -->
         <TextView
@@ -74,7 +98,6 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:clipToPadding="false"
-            android:paddingStart="0dp"
             android:paddingEnd="16dp"
             tools:listitem="@layout/item_artist" />
 
@@ -95,7 +118,6 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:clipToPadding="false"
-            android:paddingStart="0dp"
             android:paddingEnd="16dp"
             tools:listitem="@layout/item_song_horizontal" />
 
@@ -116,7 +138,6 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:clipToPadding="false"
-            android:paddingStart="0dp"
             android:paddingEnd="16dp"
             tools:listitem="@layout/item_song_horizontal" />
 

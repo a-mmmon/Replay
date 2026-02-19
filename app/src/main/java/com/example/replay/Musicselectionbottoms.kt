@@ -1,81 +1,118 @@
 package com.example.replay
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
+import android.widget.EditText
+import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MusicSelectionBottomSheet : BottomSheetDialogFragment() {
 
-    private var onMusicSelectedListener: ((ITunesSong) -> Unit)? = null  // ✅ FIXED: Music → ITunesSong
+    private lateinit var searchInput: EditText
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var adapter: MusicSelectionAdapter
+
+    private val songs = mutableListOf<ITunesSong>()
+    private var onMusicSelected: ((ITunesSong) -> Unit)? = null
+
+    fun setOnMusicSelectedListener(listener: (ITunesSong) -> Unit) {
+        onMusicSelected = listener
+    }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
         return inflater.inflate(R.layout.bottom_sheet_music_selection, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val rvMusic = view.findViewById<RecyclerView>(R.id.rvMusicList)
-        val tvTitle = view.findViewById<TextView>(R.id.tvMusicSelectionTitle)
+        searchInput = view.findViewById(R.id.searchInput)
+        recyclerView = view.findViewById(R.id.musicRecyclerView)
+        progressBar = view.findViewById(R.id.progressBar)
 
-        tvTitle.text = "Select Music"
+        setupRecyclerView()
+        loadDefaultSongs()
+        setupSearch()
+    }
 
-        // Sample music list - using ITunesSong from SampleData
-        val musicList = listOf(
-            SampleData.sampleMusic1,
-            SampleData.sampleMusic2,
-            SampleData.sampleMusic3
-        )
-
-        val adapter = MusicSelectionAdapter(musicList) { music ->
-            onMusicSelectedListener?.invoke(music)
+    private fun setupRecyclerView() {
+        adapter = MusicSelectionAdapter(songs) { song ->
+            onMusicSelected?.invoke(song)
             dismiss()
         }
-
-        rvMusic.layoutManager = LinearLayoutManager(requireContext())
-        rvMusic.adapter = adapter
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.adapter = adapter
     }
 
-    fun setOnMusicSelectedListener(listener: (ITunesSong) -> Unit) {  // ✅ FIXED: Music → ITunesSong
-        onMusicSelectedListener = listener
-    }
-}
-
-// Simple adapter for music selection
-class MusicSelectionAdapter(
-    private val musicList: List<ITunesSong>,  // ✅ FIXED: Music → ITunesSong
-    private val onMusicClick: (ITunesSong) -> Unit  // ✅ FIXED: Music → ITunesSong
-) : RecyclerView.Adapter<MusicSelectionAdapter.MusicViewHolder>() {
-
-    inner class MusicViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val tvTitle: TextView = view.findViewById(R.id.tvMusicTitle)
-        val tvArtist: TextView = view.findViewById(R.id.tvMusicArtist)
+    private fun loadDefaultSongs() {
+        searchSongs("top hits 2024")
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_music_selection, parent, false)
-        return MusicViewHolder(view)
+    private fun setupSearch() {
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val query = s.toString().trim()
+                if (query.length >= 2) {
+                    searchSongs(query)
+                } else if (query.isEmpty()) {
+                    loadDefaultSongs()
+                }
+            }
+        })
     }
 
-    override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
-        val music = musicList[position]
-        holder.tvTitle.text = music.trackName      // ✅ FIXED: title → trackName
-        holder.tvArtist.text = music.artistName    // ✅ FIXED: artist → artistName
+    private fun searchSongs(query: String) {
+        if (!isAdded) return
+        progressBar.visibility = View.VISIBLE
 
-        holder.itemView.setOnClickListener {
-            onMusicClick(music)
-        }
+        RetrofitClient.api.searchSongs(query, limit = 25)
+            .enqueue(object : Callback<ITunesResponse> {
+                override fun onResponse(
+                    call: Call<ITunesResponse>,
+                    response: Response<ITunesResponse>
+                ) {
+                    if (!isAdded) return
+                    progressBar.visibility = View.GONE
+                    if (response.isSuccessful) {
+                        val results = response.body()?.results ?: emptyList()
+                        songs.clear()
+                        songs.addAll(results)
+                        adapter.notifyDataSetChanged()
+                        Log.d("MusicSelection", "Loaded ${results.size} songs for '$query'")
+                    } else {
+                        loadFallback()
+                    }
+                }
+
+                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
+                    if (!isAdded) return
+                    progressBar.visibility = View.GONE
+                    Log.e("MusicSelection", "Failed to load songs", t)
+                    loadFallback()
+                }
+            })
     }
 
-    override fun getItemCount() = musicList.size
+    private fun loadFallback() {
+        songs.clear()
+        songs.addAll(SampleData.sampleSongs)
+        adapter.notifyDataSetChanged()
+        Toast.makeText(requireContext(), "Showing offline songs", Toast.LENGTH_SHORT).show()
+    }
 }

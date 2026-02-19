@@ -47,7 +47,7 @@ class ConversationActivity : AppCompatActivity() {
         setupToolbar()
         setupRecyclerView()
         setupSendButton()
-        listenToMessages()  // ← Real-time Firebase listener
+        listenToMessages()
     }
 
     private fun initializeViews() {
@@ -74,9 +74,14 @@ class ConversationActivity : AppCompatActivity() {
 
     private fun setupSendButton() {
         sendButton.setOnClickListener { sendMessage() }
+
+        // Also send on keyboard action
+        messageInput.setOnEditorActionListener { _, _, _ ->
+            sendMessage()
+            true
+        }
     }
 
-    // ─── FIREBASE: Send message ───────────────────────────────────────────────
     private fun sendMessage() {
         val text = messageInput.text.toString().trim()
         if (text.isEmpty()) return
@@ -92,30 +97,28 @@ class ConversationActivity : AppCompatActivity() {
             "isRead" to false
         )
 
-        // Save message
+        messageInput.text.clear()
+
         database.getReference("messages").child(conversationId).child(messageId)
             .setValue(message)
             .addOnSuccessListener {
-                messageInput.text.clear()
                 updateConversationForBothUsers(text)
                 Log.d("ConversationActivity", "Message sent: $messageId")
             }
             .addOnFailureListener { e ->
-                Log.e("ConversationActivity", "Failed to send message: ${e.message}")
+                Log.e("ConversationActivity", "Failed to send: ${e.message}")
             }
     }
 
-    // ─── FIREBASE: Update conversation list for both users ───────────────────
     private fun updateConversationForBothUsers(lastMessage: String) {
         val timestamp = System.currentTimeMillis()
 
-        // Get current user's profile to save in other user's conversation
         database.getReference("users").child(currentUserId).get()
             .addOnSuccessListener { snapshot ->
                 val myProfile = snapshot.getValue(UserProfile::class.java)
-                val myName = myProfile?.username ?: auth.currentUser?.email?.substringBefore("@") ?: "User"
+                val myName = myProfile?.username
+                    ?: auth.currentUser?.email?.substringBefore("@") ?: "User"
 
-                // Update MY conversation entry (shows other user's info)
                 val myConversation = mapOf(
                     "conversationId" to conversationId,
                     "otherUserId" to otherUserId,
@@ -125,10 +128,10 @@ class ConversationActivity : AppCompatActivity() {
                     "timestamp" to timestamp,
                     "unreadBadge" to 0
                 )
-                database.getReference("conversations").child(currentUserId)
-                    .child(conversationId).setValue(myConversation)
+                database.getReference("conversations")
+                    .child(currentUserId).child(conversationId)
+                    .setValue(myConversation)
 
-                // Update OTHER USER's conversation entry (shows my info)
                 val theirConversation = mapOf(
                     "conversationId" to conversationId,
                     "otherUserId" to currentUserId,
@@ -138,18 +141,34 @@ class ConversationActivity : AppCompatActivity() {
                     "timestamp" to timestamp,
                     "unreadBadge" to 1
                 )
-                database.getReference("conversations").child(otherUserId)
-                    .child(conversationId).setValue(theirConversation)
+                database.getReference("conversations")
+                    .child(otherUserId).child(conversationId)
+                    .setValue(theirConversation)
             }
     }
 
-    // ─── FIREBASE: Listen to messages in real-time ───────────────────────────
     private fun listenToMessages() {
         database.getReference("messages").child(conversationId)
             .orderByChild("timestamp")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    val message = snapshot.getValue(Message::class.java) ?: return
+                    // Manually map to handle both var fields and Firebase naming
+                    val messageId = snapshot.child("messageId").getValue(String::class.java) ?: ""
+                    val senderId = snapshot.child("senderId").getValue(String::class.java) ?: ""
+                    val receiverId = snapshot.child("receiverId").getValue(String::class.java) ?: ""
+                    val text = snapshot.child("text").getValue(String::class.java) ?: ""
+                    val timestamp = snapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                    val isRead = snapshot.child("isRead").getValue(Boolean::class.java) ?: false
+
+                    val message = Message(
+                        messageId = messageId,
+                        senderId = senderId,
+                        receiverId = receiverId,
+                        text = text,
+                        timestamp = timestamp,
+                        isRead = isRead
+                    )
+
                     messagesAdapter.addMessage(message)
                     messagesRecyclerView.scrollToPosition(messagesAdapter.itemCount - 1)
                 }

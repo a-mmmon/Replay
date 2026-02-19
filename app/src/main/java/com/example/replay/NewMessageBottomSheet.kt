@@ -21,7 +21,7 @@ class NewMessageBottomSheet : BottomSheetDialogFragment() {
 
     private lateinit var searchInput: EditText
     private lateinit var usersRecyclerView: RecyclerView
-    private lateinit var usersAdapter: UsersToMessageAdapter
+    private lateinit var usersAdapter: UsersAdapter
 
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
@@ -34,27 +34,21 @@ class NewMessageBottomSheet : BottomSheetDialogFragment() {
         onUserSelected = listener
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.bottom_sheet_new_message, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         searchInput = view.findViewById(R.id.searchInput)
         usersRecyclerView = view.findViewById(R.id.usersRecyclerView)
-
         setupRecyclerView()
-        loadAllUsersFromFirebase()   // ← Load real users
+        loadAllUsersFromFirebase()
         setupSearch()
     }
 
     private fun setupRecyclerView() {
-        usersAdapter = UsersToMessageAdapter(mutableListOf()) { user ->
+        usersAdapter = UsersAdapter(mutableListOf()) { user ->
             onUserSelected?.invoke(user)
             dismiss()
         }
@@ -62,22 +56,16 @@ class NewMessageBottomSheet : BottomSheetDialogFragment() {
         usersRecyclerView.adapter = usersAdapter
     }
 
-    // ─── FIREBASE: Load all real users (except current user) ─────────────────
     private fun loadAllUsersFromFirebase() {
         database.getReference("users")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
                     allUsers.clear()
-
                     for (child in snapshot.children) {
                         val user = child.getValue(UserProfile::class.java) ?: continue
-                        // Don't show current user in search results
-                        if (user.userId != currentUserId) {
-                            allUsers.add(user)
-                        }
+                        if (user.userId != currentUserId) allUsers.add(user)
                     }
-
                     usersAdapter.updateUsers(allUsers)
                     Log.d("NewMessageBottomSheet", "Loaded ${allUsers.size} users")
                 }
@@ -88,23 +76,17 @@ class NewMessageBottomSheet : BottomSheetDialogFragment() {
             })
     }
 
-    // ─── Search/filter users by username ─────────────────────────────────────
     private fun setupSearch() {
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
                 val query = s.toString().trim().lowercase()
-                if (query.isEmpty()) {
-                    usersAdapter.updateUsers(allUsers)
-                } else {
-                    val filtered = allUsers.filter { user ->
-                        user.username.lowercase().contains(query) ||
-                                user.handle.lowercase().contains(query)
-                    }
-                    usersAdapter.updateUsers(filtered)
+                val filtered = if (query.isEmpty()) allUsers
+                else allUsers.filter {
+                    it.username.lowercase().contains(query) || it.handle.lowercase().contains(query)
                 }
+                usersAdapter.updateUsers(filtered)
             }
         })
     }

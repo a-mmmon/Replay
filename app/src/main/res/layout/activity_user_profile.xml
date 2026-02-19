@@ -6,13 +6,14 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
-    <!-- Toolbar -->
+    <!-- Toolbar with back button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="8dp">
+        android:paddingHorizontal="8dp"
+        android:background="#6750A4">
 
         <ImageButton
             android:id="@+id/backButton"
@@ -20,7 +21,8 @@
             android:layout_height="40dp"
             android:src="@drawable/ic_arrow_back"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"/>
+            android:contentDescription="Back"
+            android:tint="#FFFFFF" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -28,7 +30,9 @@
             android:text="Profile"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:layout_marginStart="8dp"/>
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="8dp" />
+
     </LinearLayout>
 
     <ScrollView
@@ -54,7 +58,7 @@
                     android:layout_height="88dp"
                     android:src="@drawable/ic_android_placeholder"
                     app:shapeAppearanceOverlay="@style/CircleImageView"
-                    android:layout_marginBottom="12dp"/>
+                    android:layout_marginBottom="12dp" />
 
                 <TextView
                     android:id="@+id/usernameText"
@@ -63,7 +67,7 @@
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/black"
-                    android:layout_marginBottom="4dp"/>
+                    android:layout_marginBottom="4dp" />
 
                 <TextView
                     android:id="@+id/handleText"
@@ -71,7 +75,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
                     android:textColor="#666666"
-                    android:layout_marginBottom="8dp"/>
+                    android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:id="@+id/bioText"
@@ -80,7 +84,7 @@
                     android:textSize="14sp"
                     android:textColor="#444444"
                     android:gravity="center"
-                    android:layout_marginBottom="16dp"/>
+                    android:layout_marginBottom="16dp" />
 
                 <!-- Stats Row -->
                 <LinearLayout
@@ -104,14 +108,14 @@
                             android:text="0"
                             android:textSize="18sp"
                             android:textStyle="bold"
-                            android:textColor="@android:color/black"/>
+                            android:textColor="@android:color/black" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Followers"
                             android:textSize="12sp"
-                            android:textColor="#666666"/>
+                            android:textColor="#666666" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -128,14 +132,14 @@
                             android:text="0"
                             android:textSize="18sp"
                             android:textStyle="bold"
-                            android:textColor="@android:color/black"/>
+                            android:textColor="@android:color/black" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Following"
                             android:textSize="12sp"
-                            android:textColor="#666666"/>
+                            android:textColor="#666666" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -149,7 +153,7 @@
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:background="#6750A4"
-                    android:textSize="14sp"/>
+                    android:textSize="14sp" />
 
             </LinearLayout>
 
@@ -157,7 +161,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#EEEEEE"/>
+                android:background="#EEEEEE" />
 
             <!-- Posts Label -->
             <TextView
@@ -166,14 +170,14 @@
                 android:text="Posts"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:padding="16dp"/>
+                android:padding="16dp" />
 
             <!-- Posts RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/postsRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"/>
+                android:nestedScrollingEnabled="false" />
 
         </LinearLayout>
     </ScrollView>
