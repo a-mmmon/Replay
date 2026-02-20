@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -98,6 +99,7 @@ class ProfileFragment : Fragment() {
         settingsButton   = view.findViewById(R.id.settingsButton)
         notificationButton = view.findViewById(R.id.notificationButton)
         notificationBadge = view.findViewById(R.id.notificationBadge)
+        applyNotificationIconTint()
 
         profileImage?.setImageResource(ThemeManager.getDefaultAvatarRes(requireContext()))
         profileImage?.setOnClickListener { openImagePicker() }
@@ -395,6 +397,15 @@ class ProfileFragment : Fragment() {
         notificationButton?.setOnClickListener {
             startActivity(Intent(requireContext(), NotificationsActivity::class.java))
         }
+    }
+
+    private fun applyNotificationIconTint() {
+        val color = if (ThemeManager.getSavedTheme(requireContext()) == ThemeManager.THEME_ROYAL) {
+            android.R.color.white
+        } else {
+            android.R.color.black
+        }
+        notificationButton?.setColorFilter(ContextCompat.getColor(requireContext(), color))
     }
 
     private fun observeNotificationBadge() {

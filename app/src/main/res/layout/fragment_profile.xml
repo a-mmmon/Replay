@@ -48,8 +48,7 @@
                 android:background="@android:color/transparent"
                 android:contentDescription="Open notifications"
                 android:padding="8dp"
-                android:src="@drawable/ic_notifications_bell"
-                android:tint="@android:color/white" />
+                android:src="@drawable/ic_notifications_bell" />
 
             <TextView
                 android:id="@+id/notificationBadge"
