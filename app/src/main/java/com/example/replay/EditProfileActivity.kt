@@ -25,6 +25,7 @@ class EditProfileActivity : AppCompatActivity() {
     // Firebase
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
+    private var existingProfile: UserProfile? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +55,7 @@ class EditProfileActivity : AppCompatActivity() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     progressBar.visibility = View.GONE
                     val profile = snapshot.getValue(UserProfile::class.java)
+                    existingProfile = profile
 
                     if (profile != null) {
                         etUsername.setText(profile.username)
@@ -103,9 +105,12 @@ class EditProfileActivity : AppCompatActivity() {
             username = username,
             handle = "@$handle",
             bio = bio,
-            profileImage = "",
-            followers = 0,
-            following = 0
+            email = existingProfile?.email ?: (auth.currentUser?.email ?: ""),
+            profileImage = existingProfile?.profileImage ?: "",
+            followers = existingProfile?.followers ?: 0,
+            following = existingProfile?.following ?: 0,
+            streakCount = existingProfile?.streakCount ?: 0,
+            lastActiveDate = existingProfile?.lastActiveDate ?: 0L
         )
 
         database.getReference("users").child(userId)
