@@ -225,14 +225,26 @@ class DiscoverFragment : Fragment() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
                     userResults.clear()
+                    val normalizedQuery = query.trim().lowercase().removePrefix("@")
+
                     for (child in snapshot.children) {
                         val user = child.getValue(UserProfile::class.java) ?: continue
-                        if (user.userId == currentUserId) continue
-                        if (user.username.lowercase().contains(query.lowercase()) ||
-                            user.handle.lowercase().contains(query.lowercase())) {
+                        if (user.userId.isBlank() || user.userId == currentUserId) continue
+
+                        val username = user.username.trim().lowercase()
+                        val handle = user.handle.trim().lowercase().removePrefix("@")
+                        val email = user.email.trim().lowercase()
+
+                        val matches =
+                            username.contains(normalizedQuery) ||
+                            handle.contains(normalizedQuery) ||
+                            email.contains(normalizedQuery)
+
+                        if (matches) {
                             userResults.add(user)
                         }
                     }
+                    userResults.sortBy { it.username.lowercase() }
                     userSearchAdapter.updateUsers(userResults)
                     searchResultsHeader.text = "People (${userResults.size})"
                 }

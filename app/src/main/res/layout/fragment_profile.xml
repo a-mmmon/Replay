@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7F7FA"
+    android:background="?android:windowBackground"
     android:orientation="vertical">
 
     <RelativeLayout
@@ -39,10 +39,10 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="12dp"
-        app:cardBackgroundColor="@android:color/white"
+        app:cardBackgroundColor="?attr/colorSurface"
         app:cardCornerRadius="20dp"
         app:cardElevation="4dp"
-        app:strokeColor="#E8E8EE"
+        app:strokeColor="?attr/colorSurfaceVariant"
         app:strokeWidth="1dp">
 
         <LinearLayout
@@ -68,9 +68,9 @@
                         android:layout_gravity="center"
                         android:contentDescription="Profile picture"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/default_profile"
+                        android:src="@drawable/ic_android_placeholder"
                         app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-                        app:strokeColor="#DDDEE8"
+                        app:strokeColor="?attr/colorSurfaceVariant"
                         app:strokeWidth="2dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -80,7 +80,7 @@
                         android:layout_gravity="bottom|end"
                         android:contentDescription="Change profile picture"
                         android:padding="0dp"
-                        app:backgroundTint="#121826"
+                        app:backgroundTint="?attr/colorPrimary"
                         app:icon="@android:drawable/ic_menu_camera"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp"
@@ -101,7 +101,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@username"
-                        android:textColor="#5F6675"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="14sp" />
 
                     <TextView
@@ -111,7 +111,7 @@
                         android:layout_marginTop="8dp"
                         android:maxLines="3"
                         android:text="Share your vibe with a short bio."
-                        android:textColor="#232A37"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="14sp" />
                 </LinearLayout>
             </LinearLayout>
@@ -123,9 +123,13 @@
                 android:orientation="horizontal">
 
                 <LinearLayout
+                    android:id="@+id/followersSection"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center"
                     android:orientation="vertical">
 
@@ -134,7 +138,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"
-                        android:textColor="#161B22"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -142,14 +146,18 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Followers"
-                        android:textColor="#6C7380"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/followingSection"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center"
                     android:orientation="vertical">
 
@@ -158,7 +166,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"
-                        android:textColor="#161B22"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -166,7 +174,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Following"
-                        android:textColor="#6C7380"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
                 </LinearLayout>
 
@@ -182,7 +190,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"
-                        android:textColor="#161B22"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -190,7 +198,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Streak 🔥"
-                        android:textColor="#6C7380"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
                 </LinearLayout>
             </LinearLayout>
@@ -202,11 +210,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="8dp"
-        app:tabIndicatorColor="#121826"
+        app:tabIndicatorColor="?attr/colorPrimary"
         app:tabIndicatorFullWidth="false"
         app:tabRippleColor="#14000000"
-        app:tabSelectedTextColor="#121826"
-        app:tabTextColor="#697183" />
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="?attr/colorOnSurfaceVariant" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/postsRecyclerView"

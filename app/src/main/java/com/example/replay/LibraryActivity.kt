@@ -1,12 +1,11 @@
 package com.example.replay
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.widget.TextView
 
-class LibraryActivity : AppCompatActivity() {
+class LibraryActivity : BaseThemedActivity() {
 
     private lateinit var favoriteSongsRecyclerView: RecyclerView
     private lateinit var emptyStateText: TextView

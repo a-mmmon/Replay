@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -57,23 +58,36 @@ class NewMessageBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun loadAllUsersFromFirebase() {
-        database.getReference("users")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!isAdded) return
-                    allUsers.clear()
-                    for (child in snapshot.children) {
-                        val user = child.getValue(UserProfile::class.java) ?: continue
-                        if (user.userId != currentUserId) allUsers.add(user)
-                    }
-                    usersAdapter.updateUsers(allUsers)
-                    Log.d("NewMessageBottomSheet", "Loaded ${allUsers.size} users")
-                }
+        FollowManager.loadMutualFollowIds(currentUserId) { allowedUserIds ->
+            database.getReference("users")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (!isAdded) return
+                        allUsers.clear()
+                        for (child in snapshot.children) {
+                            val user = child.getValue(UserProfile::class.java) ?: continue
+                            if (user.userId == currentUserId) continue
+                            if (allowedUserIds.contains(user.userId)) {
+                                allUsers.add(user)
+                            }
+                        }
+                        usersAdapter.updateUsers(allUsers)
 
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("NewMessageBottomSheet", "Failed to load users: ${error.message}")
-                }
-            })
+                        if (allUsers.isEmpty()) {
+                            Toast.makeText(
+                                requireContext(),
+                                "No mutual follows yet. Follow each other to message.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        Log.d("NewMessageBottomSheet", "Loaded ${allUsers.size} messageable users")
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("NewMessageBottomSheet", "Failed to load users: ${error.message}")
+                    }
+                })
+        }
     }
 
     private fun setupSearch() {

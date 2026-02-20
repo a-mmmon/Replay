@@ -5,6 +5,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.fragment.app.FragmentActivity
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
@@ -35,6 +38,7 @@ class ProfilePostsAdapter(
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
+        val music = resolveSong(post)
 
         holder.userName.text = post.username
         holder.postText.text = post.caption
@@ -44,14 +48,12 @@ class ProfilePostsAdapter(
         if (post.userProfileImage.isNotEmpty()) {
             Glide.with(holder.itemView.context)
                 .load(post.userProfileImage)
-                .placeholder(R.drawable.ic_android_placeholder)
+                .placeholder(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
                 .into(holder.profileImage)
         } else {
-            holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
+            holder.profileImage.setImageResource(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
         }
 
-        // ✅ FIX: local val to allow smart cast on mutable property
-        val music = post.music
         if (music != null) {
             holder.musicContainer.visibility = View.VISIBLE
             holder.musicTitle.text = music.trackName
@@ -61,8 +63,12 @@ class ProfilePostsAdapter(
                     .load(music.artworkUrl100)
                     .into(holder.musicImage)
             }
+            holder.musicContainer.setOnClickListener {
+                showMusicBottomSheet(holder.itemView.context, music)
+            }
         } else {
             holder.musicContainer.visibility = View.GONE
+            holder.musicContainer.setOnClickListener(null)
         }
 
         holder.likeButton.setImageResource(R.drawable.ic_heart_outline)
@@ -87,5 +93,32 @@ class ProfilePostsAdapter(
             diff < 604800000 -> "${diff / 86400000}d"
             else -> "${diff / 604800000}w"
         }
+    }
+
+    private fun showMusicBottomSheet(context: android.content.Context, song: ITunesSong?) {
+        val activity = findFragmentActivity(context) ?: return
+        val validSong = song ?: return
+        val bottomSheet = MusicPlayerBottomSheet(validSong) { }
+        bottomSheet.show(activity.supportFragmentManager, "MusicPlayerBottomSheet")
+    }
+
+    private fun findFragmentActivity(context: Context): FragmentActivity? {
+        var current = context
+        while (current is ContextWrapper) {
+            if (current is FragmentActivity) return current
+            current = current.baseContext
+        }
+        return null
+    }
+
+    private fun resolveSong(post: Post): ITunesSong? {
+        post.music?.let { return it }
+        if (post.songTitle.isNullOrBlank()) return null
+        return ITunesSong(
+            trackId = if (post.postId.isNotBlank()) post.postId.hashCode().toLong() else 0L,
+            trackName = post.songTitle ?: "",
+            artistName = post.songArtist ?: "",
+            artworkUrl100 = post.songImageUrl ?: ""
+        )
     }
 }

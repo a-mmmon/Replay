@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -47,9 +49,15 @@ class MessagesFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        conversationsAdapter = ConversationsAdapter(emptyList()) { conversation ->
-            openConversation(conversation)
-        }
+        conversationsAdapter = ConversationsAdapter(
+            emptyList(),
+            onConversationClick = { conversation ->
+                openConversation(conversation)
+            },
+            onConversationMenuClick = { anchor, conversation ->
+                showConversationMenu(anchor, conversation)
+            }
+        )
         conversationsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         conversationsRecyclerView.adapter = conversationsAdapter
     }
@@ -80,7 +88,12 @@ class MessagesFragment : Fragment() {
 
                     for (child in snapshot.children) {
                         val conversation = child.getValue(Conversation::class.java)
-                        conversation?.let { conversations.add(it) }
+                        if (conversation != null &&
+                            conversation.otherUserId.isNotBlank() &&
+                            conversation.otherUserName.isNotBlank()
+                        ) {
+                            conversations.add(conversation)
+                        }
                     }
 
                     // Sort by timestamp descending (newest first)
@@ -113,5 +126,37 @@ class MessagesFragment : Fragment() {
         intent.putExtra("other_user_name", user.username)
         intent.putExtra("other_user_image", user.profileImage)
         startActivity(intent)
+    }
+
+    private fun showConversationMenu(anchor: View, conversation: Conversation) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add("Delete chat")
+        popup.setOnMenuItemClickListener {
+            confirmDeleteConversation(conversation)
+            true
+        }
+        popup.show()
+    }
+
+    private fun confirmDeleteConversation(conversation: Conversation) {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Delete chat")
+            .setMessage("This will remove the chat box from your messages list.")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteConversation(conversation)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteConversation(conversation: Conversation) {
+        if (currentUserId.isBlank() || conversation.conversationId.isBlank()) return
+        database.getReference("conversations")
+            .child(currentUserId)
+            .child(conversation.conversationId)
+            .removeValue()
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to delete chat.", Toast.LENGTH_SHORT).show()
+            }
     }
 }

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:background="#F5F5F5">
+    android:background="?android:windowBackground">
 
     <TextView
         android:layout_width="wrap_content"
@@ -77,7 +77,9 @@
         android:id="@+id/btnSave"
         android:layout_width="match_parent"
         android:layout_height="56dp"
+        android:backgroundTint="?attr/colorPrimary"
         android:text="Save Profile"
+        android:textColor="@android:color/white"
         android:textSize="16sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"/>

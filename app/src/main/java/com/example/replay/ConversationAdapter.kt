@@ -3,6 +3,7 @@ package com.example.replay
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
@@ -10,7 +11,8 @@ import com.bumptech.glide.Glide
 
 class ConversationsAdapter(
     private var conversations: List<Conversation>,
-    private val onConversationClick: (Conversation) -> Unit
+    private val onConversationClick: (Conversation) -> Unit,
+    private val onConversationMenuClick: (anchor: View, conversation: Conversation) -> Unit
 ) : RecyclerView.Adapter<ConversationsAdapter.ConversationViewHolder>() {
 
     inner class ConversationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -19,6 +21,7 @@ class ConversationsAdapter(
         val lastMessage: TextView = itemView.findViewById(R.id.lastMessage)
         val timestamp: TextView = itemView.findViewById(R.id.timestamp)
         val unreadBadge: TextView = itemView.findViewById(R.id.unreadBadge)
+        val conversationMenuButton: ImageView = itemView.findViewById(R.id.conversationMenuButton)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConversationViewHolder {
@@ -37,10 +40,10 @@ class ConversationsAdapter(
         if (conversation.otherUserProfileImage.isNotEmpty()) {
             Glide.with(holder.itemView.context)
                 .load(conversation.otherUserProfileImage)
-                .placeholder(R.drawable.ic_android_placeholder)
+                .placeholder(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
                 .into(holder.profileImage)
         } else {
-            holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
+            holder.profileImage.setImageResource(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
         }
 
         // ✅ FIXED: Using correct field name 'unreadBadge' from Conversation data class
@@ -53,6 +56,9 @@ class ConversationsAdapter(
 
         holder.itemView.setOnClickListener {
             onConversationClick(conversation)
+        }
+        holder.conversationMenuButton.setOnClickListener {
+            onConversationMenuClick(it, conversation)
         }
     }
 

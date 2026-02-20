@@ -8,9 +8,9 @@
     <application
         android:name=".ReplayApplication"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/replay_logo"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/replay_logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.Replay">
 
@@ -52,6 +52,11 @@
         <!-- USER PROFILE ACTIVITY -->
         <activity
             android:name=".UserProfileActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".FollowListActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 

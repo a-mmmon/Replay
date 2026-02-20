@@ -30,7 +30,7 @@ class CommentAdapter(
         holder.username.text = comment.username
         holder.commentText.text = comment.commentText
         holder.timestamp.text = formatTimestamp(comment.timestamp)
-        holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
+        holder.profileImage.setImageResource(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
     }
 
     override fun getItemCount(): Int = comments.size

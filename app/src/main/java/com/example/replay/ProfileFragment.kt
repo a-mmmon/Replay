@@ -31,6 +31,8 @@ class ProfileFragment : Fragment() {
     private var bioText: TextView? = null
     private var followersCount: TextView? = null
     private var followingCount: TextView? = null
+    private var followersSection: View? = null
+    private var followingSection: View? = null
     private var streakCount: TextView? = null
     private var postsRecyclerView: RecyclerView? = null
     private var tabLayout: TabLayout? = null
@@ -86,14 +88,27 @@ class ProfileFragment : Fragment() {
         bioText = view.findViewById(R.id.bioText)
         followersCount = view.findViewById(R.id.followersCount)
         followingCount = view.findViewById(R.id.followingCount)
+        followersSection = view.findViewById(R.id.followersSection)
+        followingSection = view.findViewById(R.id.followingSection)
         streakCount = view.findViewById(R.id.streakCount)
         postsRecyclerView = view.findViewById(R.id.postsRecyclerView)
         tabLayout = view.findViewById(R.id.tabLayout)
         settingsButton = view.findViewById(R.id.settingsButton)
 
-        profileImage?.setImageResource(R.drawable.default_profile)
+        profileImage?.setImageResource(ThemeManager.getDefaultAvatarRes(requireContext()))
         profileImage?.setOnClickListener { openImagePicker() }
         editPhotoButton?.setOnClickListener { openImagePicker() }
+        followersSection?.setOnClickListener { openFollowList("followers") }
+        followingSection?.setOnClickListener { openFollowList("following") }
+    }
+
+    private fun openFollowList(initialTab: String) {
+        val user = auth.currentUser ?: return
+        startActivity(Intent(requireContext(), FollowListActivity::class.java).apply {
+            putExtra("user_id", user.uid)
+            putExtra("username", usernameText?.text?.toString().orEmpty())
+            putExtra("initial_tab", initialTab)
+        })
     }
 
     // ----------------------------
@@ -190,12 +205,14 @@ class ProfileFragment : Fragment() {
             removeAllTabs()
             addTab(newTab().setText("Posts"))
             addTab(newTab().setText("Likes"))
+            addTab(newTab().setText("Reposts"))
 
             addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
                 override fun onTabSelected(tab: TabLayout.Tab?) {
                     when (tab?.position) {
                         0 -> loadUserPosts()
                         1 -> loadUserLikes()
+                        2 -> loadUserReposts()
                     }
 >>>>>>> 1aa2d732d41d5ef05f2daf7a4d8bf58eed926172
                 }
@@ -255,14 +272,14 @@ class ProfileFragment : Fragment() {
         if (!isAdded) return
 
         if (url.isNullOrBlank()) {
-            profileImage?.setImageResource(R.drawable.default_profile)
+            profileImage?.setImageResource(ThemeManager.getDefaultAvatarRes(requireContext()))
             return
         }
 
         Glide.with(this)
             .load(url)
-            .placeholder(R.drawable.default_profile)
-            .error(R.drawable.default_profile)
+            .placeholder(ThemeManager.getDefaultAvatarRes(requireContext()))
+            .error(ThemeManager.getDefaultAvatarRes(requireContext()))
             .into(profileImage ?: return)
     }
 
@@ -284,7 +301,9 @@ class ProfileFragment : Fragment() {
 
                     for (child in snapshot.children) {
                         child.getValue(Post::class.java)?.let {
-                            userPosts.add(it)
+                            if (!it.isRepost && it.originalPostId.isBlank()) {
+                                userPosts.add(it)
+                            }
                         }
                     }
 
@@ -302,6 +321,78 @@ class ProfileFragment : Fragment() {
                     Log.e("ProfileFragment", error.message)
                 }
             })
+    }
+
+    private fun loadUserReposts() {
+        val userId = auth.currentUser?.uid ?: return
+        database.getReference("posts")
+            .orderByChild("userId")
+            .equalTo(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return
+
+                    val firebaseReposts = mutableListOf<Post>()
+                    for (child in snapshot.children) {
+                        val post = child.getValue(Post::class.java) ?: continue
+                        if (post.isRepost || post.originalPostId.isNotBlank()) {
+                            firebaseReposts.add(post)
+                        }
+                    }
+
+                    // Keep compatibility with older local repost storage.
+                    val localReposts = loadLocalRepostsFromPrefs()
+
+                    val merged = (firebaseReposts + localReposts)
+                        .distinctBy { it.postId }
+                        .sortedByDescending { it.timestamp }
+
+                    userPosts.clear()
+                    userPosts.addAll(merged)
+                    postsAdapter?.notifyDataSetChanged()
+                    tabLayout?.getTabAt(2)?.text = "Reposts (${userPosts.size})"
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ProfileFragment", error.message)
+                }
+            })
+    }
+
+    private fun loadLocalRepostsFromPrefs(): List<Post> {
+        val context = context ?: return emptyList()
+        val prefs = context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+        val count = prefs.getInt("repost_count", 0)
+        val reposts = mutableListOf<Post>()
+
+        for (i in 0 until count) {
+            val postId = prefs.getString("repost_${i}_original_post_id", "").orEmpty()
+            if (postId.isBlank()) continue
+
+            val caption = prefs.getString("repost_${i}_caption", "").orEmpty()
+            val username = prefs.getString("repost_${i}_username", "").orEmpty()
+            val timestamp = prefs.getLong("repost_${i}_timestamp", 0L)
+            val likes = prefs.getInt("repost_${i}_likes", 0)
+            val comments = prefs.getInt("repost_${i}_comments", 0)
+            val repostedBy = prefs.getString("repost_${i}_reposted_by", "").orEmpty()
+
+            reposts.add(
+                Post(
+                    postId = postId,
+                    userId = auth.currentUser?.uid.orEmpty(),
+                    username = username,
+                    caption = caption,
+                    likes = likes,
+                    comments = comments,
+                    timestamp = timestamp,
+                    isRepost = true,
+                    originalPostId = postId,
+                    repostedByUsername = repostedBy
+                )
+            )
+        }
+
+        return reposts
     }
 
     // ----------------------------
@@ -394,14 +485,41 @@ class ProfileFragment : Fragment() {
     private fun showSettingsMenu() {
         android.app.AlertDialog.Builder(requireContext())
             .setTitle("Settings")
-            .setItems(arrayOf("Edit Profile", "Logout")) { _, which ->
+            .setItems(arrayOf("Edit Profile", "Change Theme", "Logout")) { _, which ->
                 when (which) {
                     0 -> startActivity(
                         Intent(requireContext(), EditProfileActivity::class.java)
                     )
-                    1 -> performLogout()
+                    1 -> showThemePicker()
+                    2 -> performLogout()
                 }
             }
+            .show()
+    }
+
+    private fun showThemePicker() {
+        val themeLabels = arrayOf("Default", "Ocean", "Sunset", "Royal")
+        val themeKeys = arrayOf(
+            ThemeManager.THEME_DEFAULT,
+            ThemeManager.THEME_OCEAN,
+            ThemeManager.THEME_SUNSET,
+            ThemeManager.THEME_ROYAL
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Choose Theme")
+            .setSingleChoiceItems(
+                themeLabels,
+                ThemeManager.getThemeIndex(requireContext())
+            ) { dialog, which ->
+                val changed = ThemeManager.saveTheme(requireContext(), themeKeys[which])
+                dialog.dismiss()
+
+                if (changed) {
+                    requireActivity().recreate()
+                }
+            }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 

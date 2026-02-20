@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.imageview.ShapeableImageView
 
 class UsersAdapter(
@@ -27,8 +28,24 @@ class UsersAdapter(
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         val user = users[position]
 
-        holder.username.text = user.username
-        holder.handle.text = user.handle
+        holder.username.text = user.username.ifBlank { "User" }
+        holder.handle.text = when {
+            user.handle.isNotBlank() -> user.handle
+            user.email.isNotBlank() -> "@${user.email.substringBefore("@")}"
+            else -> "@${user.username.ifBlank { "user" }}"
+        }
+
+        if (user.profileImage.isNotBlank()) {
+            Glide.with(holder.itemView.context)
+                .load(user.profileImage)
+                .placeholder(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
+                .error(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
+                .into(holder.profileImage)
+        } else {
+            holder.profileImage.setImageResource(
+                ThemeManager.getDefaultAvatarRes(holder.itemView.context)
+            )
+        }
 
         holder.itemView.setOnClickListener {
             onUserClick(user)
