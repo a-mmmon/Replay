@@ -47,7 +47,14 @@ data class UserProfile(
     val profileImage: String = "",
     val bio: String = "",
     val followers: Int = 0,
+<<<<<<< HEAD
     val following: Int = 0
+=======
+    val following: Int = 0,
+    val streakCount: Int = 0,
+    val lastActiveDate: Long = 0L
+    // NOTE: No-arg constructor is required by Firebase — default values provide this ✅
+>>>>>>> 1aa2d732d41d5ef05f2daf7a4d8bf58eed926172
 ) : Parcelable
 
 // ============================================
@@ -69,7 +76,11 @@ data class Post(
     val music: ITunesSong? = null,
     val isRepost: Boolean = false,
     val originalPostId: String = "",
-    val repostedByUsername: String = ""
+    val repostedByUsername: String = "",
+
+    val songTitle: String? = null,
+    val songArtist: String? = null,
+    val songImageUrl: String? = null
 ) : Parcelable
 
 // ============================================

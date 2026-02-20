@@ -15,7 +15,7 @@ import com.google.android.material.imageview.ShapeableImageView
 
 class FeedAdapter(
     private val posts: MutableList<Post>,
-    private val onPostClick: (Post) -> Unit,
+    private val onPostClick: ((Post) -> Unit)? = null,
     private val onUsernameClick: ((Post) -> Unit)? = null
 ) : RecyclerView.Adapter<FeedAdapter.PostViewHolder>() {
 
@@ -187,7 +187,7 @@ class FeedAdapter(
         }
 
         holder.itemView.setOnClickListener {
-            onPostClick(post)
+            onPostClick?.invoke(post)
         }
     }
 
