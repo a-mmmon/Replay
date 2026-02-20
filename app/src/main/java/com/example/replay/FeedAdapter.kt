@@ -204,13 +204,17 @@ class FeedAdapter(
 
         if (repostedPosts.contains(post.postId)) {
             repostedPosts.remove(post.postId)
-            repostCounts[post.postId] = currentCount - 1
+            val newCount = (currentCount - 1).coerceAtLeast(0)
+            repostCounts[post.postId] = newCount
             removeRepostFromProfile(prefs, post.postId)
+            database.getReference("posts").child(post.postId).child("reposts").setValue(newCount)
             Toast.makeText(context, "Repost removed", Toast.LENGTH_SHORT).show()
         } else {
             repostedPosts.add(post.postId)
-            repostCounts[post.postId] = currentCount + 1
-            saveRepostToProfile(prefs, post)
+            val newCount = currentCount + 1
+            repostCounts[post.postId] = newCount
+            saveRepostToProfile(prefs, post, newCount)
+            database.getReference("posts").child(post.postId).child("reposts").setValue(newCount)
             auth.currentUser?.uid?.let { currentUserId ->
                 NotificationHelper.sendPostInteractionNotification(
                     actorUserId = currentUserId,
@@ -231,7 +235,11 @@ class FeedAdapter(
         return false
     }
 
-    private fun saveRepostToProfile(prefs: android.content.SharedPreferences, post: Post) {
+    private fun saveRepostToProfile(
+        prefs: android.content.SharedPreferences,
+        post: Post,
+        repostTotal: Int
+    ) {
         val currentUsername = prefs.getString("username", "User") ?: "User"
         val repostCount = prefs.getInt("repost_count", 0)
         prefs.edit().apply {
@@ -242,6 +250,7 @@ class FeedAdapter(
             putLong("repost_${repostCount}_timestamp", System.currentTimeMillis())
             putInt("repost_${repostCount}_likes", post.likes)
             putInt("repost_${repostCount}_comments", post.comments)
+            putInt("repost_${repostCount}_reposts", repostTotal)
             putString("repost_${repostCount}_reposted_by", currentUsername)
             post.music?.let { music ->
                 putLong("repost_${repostCount}_music_trackId", music.trackId)
@@ -272,12 +281,14 @@ class FeedAdapter(
                 putLong("repost_${i}_timestamp", prefs.getLong("repost_${i+1}_timestamp", 0L))
                 putInt("repost_${i}_likes", prefs.getInt("repost_${i+1}_likes", 0))
                 putInt("repost_${i}_comments", prefs.getInt("repost_${i+1}_comments", 0))
+                putInt("repost_${i}_reposts", prefs.getInt("repost_${i+1}_reposts", 0))
                 putString("repost_${i}_reposted_by", prefs.getString("repost_${i+1}_reposted_by", ""))
             }
             remove("repost_${repostCount-1}_id")
             remove("repost_${repostCount-1}_original_post_id")
             remove("repost_${repostCount-1}_username")
             remove("repost_${repostCount-1}_caption")
+            remove("repost_${repostCount-1}_reposts")
             putInt("repost_count", repostCount - 1)
             apply()
         }

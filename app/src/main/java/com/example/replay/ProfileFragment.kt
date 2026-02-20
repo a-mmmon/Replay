@@ -325,6 +325,20 @@ class ProfileFragment : Fragment() {
         for (i in 0 until count) {
             val postId = prefs.getString("repost_${i}_original_post_id", "").orEmpty()
             if (postId.isBlank()) continue
+            val musicTrackId = prefs.getLong("repost_${i}_music_trackId", 0L)
+            val musicTrackName = prefs.getString("repost_${i}_music_trackName", "").orEmpty()
+            val musicArtistName = prefs.getString("repost_${i}_music_artistName", "").orEmpty()
+            val musicArtwork = prefs.getString("repost_${i}_music_artworkUrl", "").orEmpty()
+            val localMusic = if (musicTrackName.isNotBlank() || musicArtistName.isNotBlank() || musicArtwork.isNotBlank()) {
+                ITunesSong(
+                    trackId = if (musicTrackId != 0L) musicTrackId else postId.hashCode().toLong(),
+                    trackName = musicTrackName,
+                    artistName = musicArtistName,
+                    artworkUrl100 = musicArtwork
+                )
+            } else {
+                null
+            }
             reposts.add(Post(
                 postId            = postId,
                 userId            = auth.currentUser?.uid.orEmpty(),
@@ -332,7 +346,12 @@ class ProfileFragment : Fragment() {
                 caption           = prefs.getString("repost_${i}_caption", "").orEmpty(),
                 likes             = prefs.getInt("repost_${i}_likes", 0),
                 comments          = prefs.getInt("repost_${i}_comments", 0),
+                reposts           = prefs.getInt("repost_${i}_reposts", 1),
                 timestamp         = prefs.getLong("repost_${i}_timestamp", 0L),
+                music             = localMusic,
+                songTitle         = musicTrackName.ifBlank { null },
+                songArtist        = musicArtistName.ifBlank { null },
+                songImageUrl      = musicArtwork.ifBlank { null },
                 isRepost          = true,
                 originalPostId    = postId,
                 repostedByUsername = prefs.getString("repost_${i}_reposted_by", "").orEmpty()
