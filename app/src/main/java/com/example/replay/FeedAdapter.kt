@@ -211,6 +211,13 @@ class FeedAdapter(
             repostedPosts.add(post.postId)
             repostCounts[post.postId] = currentCount + 1
             saveRepostToProfile(prefs, post)
+            auth.currentUser?.uid?.let { currentUserId ->
+                NotificationHelper.sendPostInteractionNotification(
+                    actorUserId = currentUserId,
+                    postId = post.postId,
+                    type = "repost"
+                )
+            }
             Toast.makeText(context, "Reposted!", Toast.LENGTH_SHORT).show()
         }
         notifyItemChanged(position)

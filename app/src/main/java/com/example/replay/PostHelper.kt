@@ -82,6 +82,11 @@ object PostHelper {
 
                     // Save to user's liked posts
                     database.getReference("userLikes").child(userId).child(postId).setValue(true)
+                    NotificationHelper.sendPostInteractionNotification(
+                        actorUserId = userId,
+                        postId = postId,
+                        type = "like"
+                    )
 
                     onComplete(true, newLikes)
                 }

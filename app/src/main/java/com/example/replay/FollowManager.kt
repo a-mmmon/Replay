@@ -83,6 +83,12 @@ object FollowManager {
             // ✅ After writing, re-count the actual list size and sync to user profile
             syncFollowingCount(currentUserId)
             syncFollowersCount(targetUserId)
+            if (follow) {
+                NotificationHelper.sendFollowNotification(
+                    actorUserId = currentUserId,
+                    targetUserId = targetUserId
+                )
+            }
             onComplete(true, null)
         }.addOnFailureListener { error ->
             onComplete(false, error.message)

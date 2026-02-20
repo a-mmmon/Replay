@@ -37,6 +37,8 @@ class ProfileFragment : Fragment() {
     private var postsRecyclerView: RecyclerView? = null
     private var tabLayout: TabLayout? = null
     private var settingsButton: ImageButton? = null
+    private var notificationButton: ImageButton? = null
+    private var notificationBadge: TextView? = null
 
     private var postsAdapter: FeedAdapter? = null
     private val userPosts = mutableListOf<Post>()
@@ -44,6 +46,8 @@ class ProfileFragment : Fragment() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
     private val storage = FirebaseStorage.getInstance()
+    private var notificationsRef: DatabaseReference? = null
+    private var notificationsListener: ValueEventListener? = null
 
     private val imagePickerLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -64,8 +68,10 @@ class ProfileFragment : Fragment() {
         setupRecyclerView()
         setupTabs()
         setupSettingsButton()
+        setupNotificationButton()
         loadUserProfileFromFirebase()
         loadUserPosts()
+        observeNotificationBadge()
     }
 
     override fun onResume() {
@@ -90,6 +96,8 @@ class ProfileFragment : Fragment() {
         postsRecyclerView = view.findViewById(R.id.postsRecyclerView)
         tabLayout        = view.findViewById(R.id.tabLayout)
         settingsButton   = view.findViewById(R.id.settingsButton)
+        notificationButton = view.findViewById(R.id.notificationButton)
+        notificationBadge = view.findViewById(R.id.notificationBadge)
 
         profileImage?.setImageResource(ThemeManager.getDefaultAvatarRes(requireContext()))
         profileImage?.setOnClickListener { openImagePicker() }
@@ -128,12 +136,22 @@ class ProfileFragment : Fragment() {
                     // ✅ Load live counts separately — don't trust stored integers
                     loadLiveFollowerCount()
                     loadLiveFollowingCount()
+                    observeNotificationBadge()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                     Log.e("ProfileFragment", error.message)
                 }
             })
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        val ref = notificationsRef
+        val listener = notificationsListener
+        if (ref != null && listener != null) {
+            ref.removeEventListener(listener)
+        }
     }
 
     // ✅ Count actual followers list live
@@ -371,6 +389,37 @@ class ProfileFragment : Fragment() {
 
     private fun setupSettingsButton() {
         settingsButton?.setOnClickListener { showSettingsMenu() }
+    }
+
+    private fun setupNotificationButton() {
+        notificationButton?.setOnClickListener {
+            startActivity(Intent(requireContext(), NotificationsActivity::class.java))
+        }
+    }
+
+    private fun observeNotificationBadge() {
+        val userId = auth.currentUser?.uid ?: return
+        val ref = database.getReference("notifications").child(userId)
+        notificationsRef = ref
+
+        notificationsListener?.let { ref.removeEventListener(it) }
+        notificationsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!isAdded) return
+                val unread = snapshot.children.count {
+                    it.child("isRead").getValue(Boolean::class.java) != true
+                }
+                if (unread > 0) {
+                    notificationBadge?.visibility = View.VISIBLE
+                    notificationBadge?.text = if (unread > 99) "99+" else unread.toString()
+                } else {
+                    notificationBadge?.visibility = View.GONE
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) = Unit
+        }
+        ref.addValueEventListener(notificationsListener as ValueEventListener)
     }
 
     private fun showSettingsMenu() {

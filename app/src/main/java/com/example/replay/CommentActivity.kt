@@ -135,6 +135,11 @@ class CommentActivity : BaseThemedActivity() {
             .addOnSuccessListener {
                 // Increment comment count on the post
                 updatePostCommentCount()
+                NotificationHelper.sendPostInteractionNotification(
+                    actorUserId = currentUser.uid,
+                    postId = postId,
+                    type = "comment"
+                )
                 Toast.makeText(this, "Comment added!", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->

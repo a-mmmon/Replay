@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground">
+    android:background="?android:windowBackground">
 
     <!-- Top Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -45,6 +45,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
+        app:cardBackgroundColor="?attr/colorSurface"
         app:cardCornerRadius="12dp"
         app:cardElevation="2dp"
         app:layout_constraintTop_toBottomOf="@id/topBar">
@@ -61,6 +62,7 @@
                 android:layout_height="wrap_content"
                 android:textStyle="bold"
                 android:textSize="14sp"
+                android:textColor="?attr/colorOnSurface"
                 tools:text="Taylor Swift" />
 
             <TextView
@@ -69,6 +71,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:textSize="14sp"
+                android:textColor="?attr/colorOnSurface"
                 tools:text="Just released my new album!" />
 
             <TextView
@@ -101,7 +104,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:background="?android:attr/colorBackground"
+        android:background="?attr/colorSurface"
         android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -112,7 +115,9 @@
             android:layout_weight="1"
             android:hint="Write a comment..."
             android:padding="12dp"
-            android:background="@drawable/rounded_edittext"
+            android:background="@drawable/bg_comment_input"
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
             android:maxLines="4" />
 
         <Button

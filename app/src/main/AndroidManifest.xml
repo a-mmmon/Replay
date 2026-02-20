@@ -60,6 +60,11 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <activity
+            android:name=".NotificationsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
         <!-- COMMENT ACTIVITY -->
         <activity
             android:name=".CommentActivity"

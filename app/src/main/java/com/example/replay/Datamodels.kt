@@ -107,3 +107,19 @@ data class Repost(
     val repostedByUsername: String = "",
     val timestamp: Long = System.currentTimeMillis()
 ) : Parcelable
+
+// ============================================
+// NOTIFICATION DATA CLASS
+// ============================================
+
+data class NotificationItem(
+    val notificationId: String = "",
+    val actorUserId: String = "",
+    val actorUsername: String = "",
+    val actorProfileImage: String = "",
+    val type: String = "",
+    val postId: String = "",
+    val message: String = "",
+    val timestamp: Long = 0L,
+    val isRead: Boolean = false
+)
