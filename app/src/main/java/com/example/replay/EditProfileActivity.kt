@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
@@ -15,6 +16,7 @@ import com.google.firebase.database.ValueEventListener
 
 class EditProfileActivity : BaseThemedActivity() {
 
+    private lateinit var backButton: ImageButton
     private lateinit var etUsername: EditText
     private lateinit var etHandle: EditText
     private lateinit var etBio: EditText
@@ -30,13 +32,15 @@ class EditProfileActivity : BaseThemedActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_profile)
 
+        backButton = findViewById(R.id.backButton)
         etUsername = findViewById(R.id.etUsername)
         etHandle = findViewById(R.id.etHandle)
         etBio = findViewById(R.id.etBio)
         btnSave = findViewById(R.id.btnSave)
         progressBar = findViewById(R.id.progressBar)
 
-        // Load existing profile data first
+        backButton.setOnClickListener { finish() }
+
         loadCurrentProfile()
 
         btnSave.setOnClickListener {
@@ -85,7 +89,6 @@ class EditProfileActivity : BaseThemedActivity() {
         val handle = etHandle.text.toString().trim()
         val bio = etBio.text.toString().trim()
 
-        // Basic validation
         if (username.isEmpty()) {
             etUsername.error = "Username is required"
             return

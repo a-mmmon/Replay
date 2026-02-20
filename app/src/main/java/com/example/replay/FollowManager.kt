@@ -73,34 +73,40 @@ object FollowManager {
             .child("followers")
             .child(currentUserId)
 
-        val currentFollowingCountRef = database.getReference("users")
-            .child(currentUserId)
-            .child("following")
-
-        val targetFollowersCountRef = database.getReference("users")
-            .child(targetUserId)
-            .child("followers")
-
         val writeTask = if (follow) {
-            myFollowingRef.setValue(true)
-                .continueWithTask {
-                    targetFollowersRef.setValue(true)
-                }
+            myFollowingRef.setValue(true).continueWithTask { targetFollowersRef.setValue(true) }
         } else {
-            myFollowingRef.removeValue()
-                .continueWithTask {
-                    targetFollowersRef.removeValue()
-                }
+            myFollowingRef.removeValue().continueWithTask { targetFollowersRef.removeValue() }
         }
 
         writeTask.addOnSuccessListener {
-            val delta = if (follow) 1 else -1
-            currentFollowingCountRef.runTransaction(CountTransaction(delta))
-            targetFollowersCountRef.runTransaction(CountTransaction(delta))
+            // ✅ After writing, re-count the actual list size and sync to user profile
+            syncFollowingCount(currentUserId)
+            syncFollowersCount(targetUserId)
             onComplete(true, null)
         }.addOnFailureListener { error ->
             onComplete(false, error.message)
         }
+    }
+
+    // ✅ Count actual following list and write it to users/{userId}/following
+    private fun syncFollowingCount(userId: String) {
+        database.getReference("userFollows").child(userId).child("following")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val count = snapshot.childrenCount.toInt()
+                database.getReference("users").child(userId).child("following").setValue(count)
+            }
+    }
+
+    // ✅ Count actual followers list and write it to users/{userId}/followers
+    private fun syncFollowersCount(userId: String) {
+        database.getReference("userFollows").child(userId).child("followers")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val count = snapshot.childrenCount.toInt()
+                database.getReference("users").child(userId).child("followers").setValue(count)
+            }
     }
 
     fun loadMutualFollowIds(currentUserId: String, onResult: (Set<String>) -> Unit) {
@@ -112,15 +118,10 @@ object FollowManager {
         val userFollowsRef = database.getReference("userFollows").child(currentUserId)
 
         userFollowsRef.child("following").get().addOnSuccessListener { followingSnapshot ->
-            val followingIds = followingSnapshot.children
-                .mapNotNull { it.key }
-                .toSet()
+            val followingIds = followingSnapshot.children.mapNotNull { it.key }.toSet()
 
             userFollowsRef.child("followers").get().addOnSuccessListener { followersSnapshot ->
-                val followerIds = followersSnapshot.children
-                    .mapNotNull { it.key }
-                    .toSet()
-
+                val followerIds = followersSnapshot.children.mapNotNull { it.key }.toSet()
                 onResult(followingIds.intersect(followerIds))
             }.addOnFailureListener {
                 onResult(emptySet())
@@ -128,22 +129,5 @@ object FollowManager {
         }.addOnFailureListener {
             onResult(emptySet())
         }
-    }
-
-    private class CountTransaction(
-        private val delta: Int
-    ) : Transaction.Handler {
-        override fun doTransaction(currentData: MutableData): Transaction.Result {
-            val current = (currentData.getValue(Int::class.java) ?: 0)
-            val next = (current + delta).coerceAtLeast(0)
-            currentData.value = next
-            return Transaction.success(currentData)
-        }
-
-        override fun onComplete(
-            error: DatabaseError?,
-            committed: Boolean,
-            currentData: com.google.firebase.database.DataSnapshot?
-        ) = Unit
     }
 }

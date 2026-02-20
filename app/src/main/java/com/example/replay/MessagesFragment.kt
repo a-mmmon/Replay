@@ -40,7 +40,7 @@ class MessagesFragment : Fragment() {
         initializeViews(view)
         setupRecyclerView()
         setupFab()
-        loadConversationsFromFirebase()  // ← Firebase instead of hardcoded
+        loadConversationsFromFirebase()
     }
 
     private fun initializeViews(view: View) {
@@ -76,7 +76,6 @@ class MessagesFragment : Fragment() {
         dialog.show(parentFragmentManager, "NewMessage")
     }
 
-    // ─── FIREBASE: Load real conversations ────────────────────────────────────
     private fun loadConversationsFromFirebase() {
         if (currentUserId.isEmpty()) return
 
@@ -96,7 +95,6 @@ class MessagesFragment : Fragment() {
                         }
                     }
 
-                    // Sort by timestamp descending (newest first)
                     conversations.sortByDescending { it.timestamp }
                     conversationsAdapter.updateConversations(conversations)
                 }
@@ -108,6 +106,15 @@ class MessagesFragment : Fragment() {
     }
 
     private fun openConversation(conversation: Conversation) {
+        // ✅ Reset unread badge when user opens the conversation
+        if (currentUserId.isNotBlank() && conversation.conversationId.isNotBlank()) {
+            database.getReference("conversations")
+                .child(currentUserId)
+                .child(conversation.conversationId)
+                .child("unreadBadge")
+                .setValue(0)
+        }
+
         val intent = Intent(requireContext(), ConversationActivity::class.java)
         intent.putExtra("conversation_id", conversation.conversationId)
         intent.putExtra("other_user_id", conversation.otherUserId)
@@ -117,8 +124,16 @@ class MessagesFragment : Fragment() {
     }
 
     private fun openConversationWithUser(user: UserProfile) {
-        // Create conversation ID from both user IDs (sorted so it's consistent)
         val conversationId = listOf(currentUserId, user.userId).sorted().joinToString("_")
+
+        // ✅ Reset unread badge here too
+        if (currentUserId.isNotBlank() && conversationId.isNotBlank()) {
+            database.getReference("conversations")
+                .child(currentUserId)
+                .child(conversationId)
+                .child("unreadBadge")
+                .setValue(0)
+        }
 
         val intent = Intent(requireContext(), ConversationActivity::class.java)
         intent.putExtra("conversation_id", conversationId)

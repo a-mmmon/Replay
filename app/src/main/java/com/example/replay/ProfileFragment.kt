@@ -43,14 +43,12 @@ class ProfileFragment : Fragment() {
 
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
-
     private val storage = FirebaseStorage.getInstance()
 
     private val imagePickerLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let { uploadProfileImage(it) }
         }
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,12 +60,10 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         initializeViews(view)
         setupRecyclerView()
         setupTabs()
         setupSettingsButton()
-
         loadUserProfileFromFirebase()
         loadUserPosts()
     }
@@ -75,25 +71,25 @@ class ProfileFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         loadUserPosts()
+        // ✅ Also refresh live counts when returning to profile
+        loadLiveFollowerCount()
+        loadLiveFollowingCount()
     }
 
-    // ----------------------------
-    // View Initialization
-    // ----------------------------
     private fun initializeViews(view: View) {
-        profileImage = view.findViewById(R.id.profileImage)
-        editPhotoButton = view.findViewById(R.id.editPhotoButton)
-        usernameText = view.findViewById(R.id.usernameText)
-        handleText = view.findViewById(R.id.handleText)
-        bioText = view.findViewById(R.id.bioText)
-        followersCount = view.findViewById(R.id.followersCount)
-        followingCount = view.findViewById(R.id.followingCount)
+        profileImage     = view.findViewById(R.id.profileImage)
+        editPhotoButton  = view.findViewById(R.id.editPhotoButton)
+        usernameText     = view.findViewById(R.id.usernameText)
+        handleText       = view.findViewById(R.id.handleText)
+        bioText          = view.findViewById(R.id.bioText)
+        followersCount   = view.findViewById(R.id.followersCount)
+        followingCount   = view.findViewById(R.id.followingCount)
         followersSection = view.findViewById(R.id.followersSection)
         followingSection = view.findViewById(R.id.followingSection)
-        streakCount = view.findViewById(R.id.streakCount)
+        streakCount      = view.findViewById(R.id.streakCount)
         postsRecyclerView = view.findViewById(R.id.postsRecyclerView)
-        tabLayout = view.findViewById(R.id.tabLayout)
-        settingsButton = view.findViewById(R.id.settingsButton)
+        tabLayout        = view.findViewById(R.id.tabLayout)
+        settingsButton   = view.findViewById(R.id.settingsButton)
 
         profileImage?.setImageResource(ThemeManager.getDefaultAvatarRes(requireContext()))
         profileImage?.setOnClickListener { openImagePicker() }
@@ -111,9 +107,6 @@ class ProfileFragment : Fragment() {
         })
     }
 
-    // ----------------------------
-    // Profile Data
-    // ----------------------------
     private fun loadUserProfileFromFirebase() {
         val userId = auth.currentUser?.uid ?: return
 
@@ -121,46 +114,20 @@ class ProfileFragment : Fragment() {
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
-                    val profile = snapshot.getValue(UserProfile::class.java)
-                    if (profile != null) {
-                        usernameText?.text = profile.username.ifEmpty { "User" }
-                        val handle = if (profile.handle.isNotEmpty()) profile.handle
-                        else "@${profile.username.ifEmpty { auth.currentUser?.email?.substringBefore("@") ?: "user" }}"
-                        handleText?.text = handle
-                        followersCount?.text = profile.followers.toString()
-                        followingCount?.text = profile.following.toString()
-<<<<<<< HEAD
-                    } else {
-                        createUserProfile(userId)
-=======
-                        Log.d("ProfileFragment", "Profile loaded: ${profile.username}")
-                    } else {
-                        val email = auth.currentUser?.email ?: "user@email.com"
-                        val fallbackName = email.substringBefore("@")
-                        usernameText?.text = fallbackName
-                        handleText?.text = "@$fallbackName"
->>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
-=======
-
                     val profile = snapshot.getValue(UserProfile::class.java)
                     profile?.let {
                         usernameText?.text = it.username
-                        handleText?.text = it.handle
-                        bioText?.text = if (it.bio.isBlank()) {
+                        handleText?.text   = it.handle
+                        bioText?.text      = if (it.bio.isBlank()) {
                             "Share your vibe with a short bio."
                         } else {
                             it.bio
                         }
-                        followersCount?.text = it.followers.toString()
-                        followingCount?.text = it.following.toString()
                         loadProfileImage(it.profileImage)
->>>>>>> 1aa2d732d41d5ef05f2daf7a4d8bf58eed926172
                     }
+                    // ✅ Load live counts separately — don't trust stored integers
+                    loadLiveFollowerCount()
+                    loadLiveFollowingCount()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -169,44 +136,56 @@ class ProfileFragment : Fragment() {
             })
     }
 
-    // ----------------------------
-    // RecyclerView Setup
-    // ----------------------------
+    // ✅ Count actual followers list live
+    private fun loadLiveFollowerCount() {
+        val userId = auth.currentUser?.uid ?: return
+        database.getReference("userFollows").child(userId).child("followers")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return
+                    val count = snapshot.childrenCount.toInt()
+                    followersCount?.text = count.toString()
+                    // Sync stored value
+                    database.getReference("users").child(userId)
+                        .child("followers").setValue(count)
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    // ✅ Count actual following list live
+    private fun loadLiveFollowingCount() {
+        val userId = auth.currentUser?.uid ?: return
+        database.getReference("userFollows").child(userId).child("following")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded) return
+                    val count = snapshot.childrenCount.toInt()
+                    followingCount?.text = count.toString()
+                    // Sync stored value
+                    database.getReference("users").child(userId)
+                        .child("following").setValue(count)
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
     private fun setupRecyclerView() {
         postsAdapter = FeedAdapter(userPosts) { post ->
             Log.d("ProfileFragment", "Clicked: ${post.postId}")
         }
-
         postsRecyclerView?.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = postsAdapter
         }
     }
 
-    // ----------------------------
-    // Tabs
-    // ----------------------------
     private fun setupTabs() {
-<<<<<<< HEAD
-        val tabs = tabLayout ?: return
-        tabs.removeAllTabs()
-        tabs.addTab(tabs.newTab().setText("Posts"))
-        tabs.addTab(tabs.newTab().setText("Reposts"))
-        tabs.addTab(tabs.newTab().setText("Likes"))
-
-        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                when (tab?.position) {
-                    0 -> loadUserPosts()
-                    1 -> loadUserReposts()
-                    2 -> loadUserLikes()
-=======
         tabLayout?.apply {
             removeAllTabs()
             addTab(newTab().setText("Posts"))
             addTab(newTab().setText("Likes"))
             addTab(newTab().setText("Reposts"))
-
             addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
                 override fun onTabSelected(tab: TabLayout.Tab?) {
                     when (tab?.position) {
@@ -214,7 +193,6 @@ class ProfileFragment : Fragment() {
                         1 -> loadUserLikes()
                         2 -> loadUserReposts()
                     }
->>>>>>> 1aa2d732d41d5ef05f2daf7a4d8bf58eed926172
                 }
                 override fun onTabUnselected(tab: TabLayout.Tab?) {}
                 override fun onTabReselected(tab: TabLayout.Tab?) {}
@@ -232,9 +210,7 @@ class ProfileFragment : Fragment() {
 
         imageRef.putFile(imageUri)
             .continueWithTask { task ->
-                if (!task.isSuccessful) {
-                    throw task.exception ?: Exception("Upload failed")
-                }
+                if (!task.isSuccessful) throw task.exception ?: Exception("Upload failed")
                 imageRef.downloadUrl
             }
             .addOnSuccessListener { downloadUri ->
@@ -243,39 +219,25 @@ class ProfileFragment : Fragment() {
                     .addOnSuccessListener {
                         if (!isAdded) return@addOnSuccessListener
                         loadProfileImage(downloadUri.toString())
-                        Toast.makeText(
-                            requireContext(),
-                            "Profile photo updated",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), "Profile photo updated", Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener { error ->
                         if (!isAdded) return@addOnFailureListener
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to save photo: ${error.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(requireContext(), "Failed to save photo: ${error.message}", Toast.LENGTH_LONG).show()
                     }
             }
             .addOnFailureListener { error ->
                 if (!isAdded) return@addOnFailureListener
-                Toast.makeText(
-                    requireContext(),
-                    "Failed to upload photo: ${error.message}",
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(requireContext(), "Failed to upload photo: ${error.message}", Toast.LENGTH_LONG).show()
             }
     }
 
     private fun loadProfileImage(url: String?) {
         if (!isAdded) return
-
         if (url.isNullOrBlank()) {
             profileImage?.setImageResource(ThemeManager.getDefaultAvatarRes(requireContext()))
             return
         }
-
         Glide.with(this)
             .load(url)
             .placeholder(ThemeManager.getDefaultAvatarRes(requireContext()))
@@ -283,40 +245,25 @@ class ProfileFragment : Fragment() {
             .into(profileImage ?: return)
     }
 
-    // ----------------------------
-    // Load User Posts
-    // ----------------------------
     private fun loadUserPosts() {
         val userId = auth.currentUser?.uid ?: return
-
         database.getReference("posts")
-            .orderByChild("userId")
-            .equalTo(userId)
+            .orderByChild("userId").equalTo(userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
-
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
-
                     userPosts.clear()
-
                     for (child in snapshot.children) {
                         child.getValue(Post::class.java)?.let {
-                            if (!it.isRepost && it.originalPostId.isBlank()) {
-                                userPosts.add(it)
-                            }
+                            if (!it.isRepost && it.originalPostId.isBlank()) userPosts.add(it)
                         }
                     }
-
                     userPosts.sortByDescending { it.timestamp }
-
-                    // 🔥 Calculate Streak
                     val streak = calculateStreak(userPosts)
                     streakCount?.text = streak.toString()
-
                     postsAdapter?.notifyDataSetChanged()
                     tabLayout?.getTabAt(0)?.text = "Posts (${userPosts.size})"
                 }
-
                 override fun onCancelled(error: DatabaseError) {
                     Log.e("ProfileFragment", error.message)
                 }
@@ -326,33 +273,24 @@ class ProfileFragment : Fragment() {
     private fun loadUserReposts() {
         val userId = auth.currentUser?.uid ?: return
         database.getReference("posts")
-            .orderByChild("userId")
-            .equalTo(userId)
+            .orderByChild("userId").equalTo(userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
-
                     val firebaseReposts = mutableListOf<Post>()
                     for (child in snapshot.children) {
                         val post = child.getValue(Post::class.java) ?: continue
-                        if (post.isRepost || post.originalPostId.isNotBlank()) {
-                            firebaseReposts.add(post)
-                        }
+                        if (post.isRepost || post.originalPostId.isNotBlank()) firebaseReposts.add(post)
                     }
-
-                    // Keep compatibility with older local repost storage.
                     val localReposts = loadLocalRepostsFromPrefs()
-
                     val merged = (firebaseReposts + localReposts)
                         .distinctBy { it.postId }
                         .sortedByDescending { it.timestamp }
-
                     userPosts.clear()
                     userPosts.addAll(merged)
                     postsAdapter?.notifyDataSetChanged()
                     tabLayout?.getTabAt(2)?.text = "Reposts (${userPosts.size})"
                 }
-
                 override fun onCancelled(error: DatabaseError) {
                     Log.e("ProfileFragment", error.message)
                 }
@@ -364,120 +302,73 @@ class ProfileFragment : Fragment() {
         val prefs = context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
         val count = prefs.getInt("repost_count", 0)
         val reposts = mutableListOf<Post>()
-
         for (i in 0 until count) {
             val postId = prefs.getString("repost_${i}_original_post_id", "").orEmpty()
             if (postId.isBlank()) continue
-
-            val caption = prefs.getString("repost_${i}_caption", "").orEmpty()
-            val username = prefs.getString("repost_${i}_username", "").orEmpty()
-            val timestamp = prefs.getLong("repost_${i}_timestamp", 0L)
-            val likes = prefs.getInt("repost_${i}_likes", 0)
-            val comments = prefs.getInt("repost_${i}_comments", 0)
-            val repostedBy = prefs.getString("repost_${i}_reposted_by", "").orEmpty()
-
-            reposts.add(
-                Post(
-                    postId = postId,
-                    userId = auth.currentUser?.uid.orEmpty(),
-                    username = username,
-                    caption = caption,
-                    likes = likes,
-                    comments = comments,
-                    timestamp = timestamp,
-                    isRepost = true,
-                    originalPostId = postId,
-                    repostedByUsername = repostedBy
-                )
-            )
+            reposts.add(Post(
+                postId            = postId,
+                userId            = auth.currentUser?.uid.orEmpty(),
+                username          = prefs.getString("repost_${i}_username", "").orEmpty(),
+                caption           = prefs.getString("repost_${i}_caption", "").orEmpty(),
+                likes             = prefs.getInt("repost_${i}_likes", 0),
+                comments          = prefs.getInt("repost_${i}_comments", 0),
+                timestamp         = prefs.getLong("repost_${i}_timestamp", 0L),
+                isRepost          = true,
+                originalPostId    = postId,
+                repostedByUsername = prefs.getString("repost_${i}_reposted_by", "").orEmpty()
+            ))
         }
-
         return reposts
     }
 
-    // ----------------------------
-    // Load User Likes
-    // ----------------------------
     private fun loadUserLikes() {
         val userId = auth.currentUser?.uid ?: return
-
         database.getReference("userLikes").child(userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
-
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!isAdded) return
-
                     val likedIds = snapshot.children.mapNotNull { it.key }
-
                     if (likedIds.isEmpty()) {
                         userPosts.clear()
                         postsAdapter?.notifyDataSetChanged()
                         tabLayout?.getTabAt(1)?.text = "Likes (0)"
                         return
                     }
-
                     val fetched = mutableListOf<Post>()
                     var count = 0
-
                     for (id in likedIds) {
                         database.getReference("posts").child(id)
                             .addListenerForSingleValueEvent(object : ValueEventListener {
-
                                 override fun onDataChange(postSnap: DataSnapshot) {
-                                    postSnap.getValue(Post::class.java)?.let {
-                                        fetched.add(it)
-                                    }
-
+                                    postSnap.getValue(Post::class.java)?.let { fetched.add(it) }
                                     count++
                                     if (count == likedIds.size) {
                                         userPosts.clear()
-                                        userPosts.addAll(
-                                            fetched.sortedByDescending { it.timestamp }
-                                        )
+                                        userPosts.addAll(fetched.sortedByDescending { it.timestamp })
                                         postsAdapter?.notifyDataSetChanged()
-                                        tabLayout?.getTabAt(1)?.text =
-                                            "Likes (${userPosts.size})"
+                                        tabLayout?.getTabAt(1)?.text = "Likes (${userPosts.size})"
                                     }
                                 }
-
-                                override fun onCancelled(error: DatabaseError) {
-                                    count++
-                                }
+                                override fun onCancelled(error: DatabaseError) { count++ }
                             })
                     }
                 }
-
                 override fun onCancelled(error: DatabaseError) {
                     Log.e("ProfileFragment", error.message)
                 }
             })
     }
 
-    // ----------------------------
-    // 🔥 STREAK LOGIC
-    // ----------------------------
     private fun calculateStreak(posts: List<Post>): Int {
         if (posts.isEmpty()) return 0
-
         val oneDay = 24 * 60 * 60 * 1000L
         val today = System.currentTimeMillis() / oneDay
-
-        val uniqueDays = posts
-            .map { it.timestamp / oneDay }
-            .toSet()
-
+        val uniqueDays = posts.map { it.timestamp / oneDay }.toSet()
         var streak = 0
-
-        while (uniqueDays.contains(today - streak)) {
-            streak++
-        }
-
+        while (uniqueDays.contains(today - streak)) streak++
         return streak
     }
 
-    // ----------------------------
-    // Settings
-    // ----------------------------
     private fun setupSettingsButton() {
         settingsButton?.setOnClickListener { showSettingsMenu() }
     }
@@ -487,9 +378,7 @@ class ProfileFragment : Fragment() {
             .setTitle("Settings")
             .setItems(arrayOf("Edit Profile", "Change Theme", "Logout")) { _, which ->
                 when (which) {
-                    0 -> startActivity(
-                        Intent(requireContext(), EditProfileActivity::class.java)
-                    )
+                    0 -> startActivity(Intent(requireContext(), EditProfileActivity::class.java))
                     1 -> showThemePicker()
                     2 -> performLogout()
                 }
@@ -505,19 +394,12 @@ class ProfileFragment : Fragment() {
             ThemeManager.THEME_SUNSET,
             ThemeManager.THEME_ROYAL
         )
-
         android.app.AlertDialog.Builder(requireContext())
             .setTitle("Choose Theme")
-            .setSingleChoiceItems(
-                themeLabels,
-                ThemeManager.getThemeIndex(requireContext())
-            ) { dialog, which ->
+            .setSingleChoiceItems(themeLabels, ThemeManager.getThemeIndex(requireContext())) { dialog, which ->
                 val changed = ThemeManager.saveTheme(requireContext(), themeKeys[which])
                 dialog.dismiss()
-
-                if (changed) {
-                    requireActivity().recreate()
-                }
+                if (changed) requireActivity().recreate()
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -526,185 +408,8 @@ class ProfileFragment : Fragment() {
     private fun performLogout() {
         auth.signOut()
         val intent = Intent(requireContext(), LoginActivity::class.java)
-        intent.flags =
-            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         requireActivity().finish()
     }
-<<<<<<< HEAD
-
-    private fun loadUserPosts() {
-        val userId = auth.currentUser?.uid ?: return
-
-        database.getReference("posts")
-            .orderByChild("userId")
-            .equalTo(userId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!isAdded) return
-                    userPosts.clear()
-                    for (child in snapshot.children) {
-                        child.getValue(Post::class.java)?.let { userPosts.add(it) }
-                    }
-<<<<<<< HEAD
-                    userPosts.sortByDescending { it.timestamp }
-=======
-
-                    if (userPosts.isEmpty()) {
-                        val username = usernameText?.text?.toString() ?: "User"
-                        userPosts.addAll(getSampleUserPosts(username))
-                    }
-
->>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
-                    postsAdapter?.notifyDataSetChanged()
-                    tabLayout?.getTabAt(0)?.text = "Posts (${userPosts.size})"
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("ProfileFragment", "Failed to load posts: ${error.message}")
-                }
-            })
-    }
-
-<<<<<<< HEAD
-=======
-    private fun loadUserReposts() {
-        userPosts.clear()
-        val userId = auth.currentUser?.uid ?: return
-
-        database.getReference("posts")
-            .orderByChild("userId")
-            .equalTo(userId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!isAdded) return
-
-                    for (child in snapshot.children) {
-                        val post = child.getValue(Post::class.java)
-                        if (post != null && post.isRepost) {
-                            userPosts.add(post)
-                        }
-                    }
-
-                    postsAdapter?.notifyDataSetChanged()
-                    tabLayout?.getTabAt(1)?.text = "Reposts (${userPosts.size})"
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("ProfileFragment", "Failed to load reposts: ${error.message}")
-                }
-            })
-    }
-
->>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
-    private fun loadUserLikes() {
-        val userId = auth.currentUser?.uid ?: return
-
-<<<<<<< HEAD
-        // PostHelper writes likes to userLikes/{userId}/{postId}
-        database.getReference("userLikes").child(userId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!isAdded) return
-                    val likedPostIds = snapshot.children.mapNotNull { it.key }.filter { it.isNotEmpty() }
-
-                    if (likedPostIds.isEmpty()) {
-                        userPosts.clear()
-                        postsAdapter?.notifyDataSetChanged()
-                        tabLayout?.getTabAt(1)?.text = "Likes (0)"
-                        return
-                    }
-
-                    val fetchedPosts = mutableListOf<Post>()
-                    var fetched = 0
-
-                    for (postId in likedPostIds) {
-                        database.getReference("posts").child(postId)
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(postSnap: DataSnapshot) {
-                                    if (!isAdded) return
-                                    postSnap.getValue(Post::class.java)?.let { fetchedPosts.add(it) }
-                                    fetched++
-                                    if (fetched == likedPostIds.size) {
-                                        userPosts.clear()
-                                        userPosts.addAll(fetchedPosts.sortedByDescending { it.timestamp })
-                                        postsAdapter?.notifyDataSetChanged()
-                                        tabLayout?.getTabAt(1)?.text = "Likes (${userPosts.size})"
-                                    }
-                                }
-                                override fun onCancelled(error: DatabaseError) {
-                                    fetched++
-                                    if (fetched == likedPostIds.size) {
-                                        userPosts.clear()
-                                        userPosts.addAll(fetchedPosts.sortedByDescending { it.timestamp })
-                                        postsAdapter?.notifyDataSetChanged()
-                                        tabLayout?.getTabAt(1)?.text = "Likes (${fetchedPosts.size})"
-                                    }
-                                }
-                            })
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("ProfileFragment", "Failed to load likes: ${error.message}")
-                }
-            })
-=======
-    private fun getSampleUserPosts(username: String): List<Post> {
-        return listOf(
-            Post(
-                postId = "sample_1",
-                userId = auth.currentUser?.uid ?: "current_user",
-                username = username,
-                caption = "Just shared my favorite playlist! 🎵",
-                likes = 42,
-                comments = 8,
-                timestamp = System.currentTimeMillis() - 3600000,
-                music = null,
-                isRepost = false
-            )
-        )
-    }
-
-    private fun getSampleLikedPosts(): List<Post> {
-        return listOf(
-            Post(
-                postId = "liked_1",
-                userId = "user1",
-                username = "Taylor Swift",
-                caption = "Such a fun night making music! ✨",
-                likes = 5,
-                comments = 2,
-                timestamp = System.currentTimeMillis() - 10800000,
-                music = null,
-                isRepost = false
-            ),
-            Post(
-                postId = "liked_2",
-                userId = "user2",
-                username = "BTS",
-                caption = "Have a wonderful concert! ✨",
-                likes = 1000,
-                comments = 150,
-                timestamp = System.currentTimeMillis() - 3600000,
-                music = null,
-                isRepost = false
-            ),
-            Post(
-                postId = "liked_3",
-                userId = "user3",
-                username = "Black Pink",
-                caption = "How amazing is this new album! ✨",
-                likes = 2000,
-                comments = 200,
-                timestamp = System.currentTimeMillis() - 86400000,
-                music = null,
-                isRepost = false
-            )
-        )
->>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
-    }
 }
-=======
-}
->>>>>>> 1aa2d732d41d5ef05f2daf7a4d8bf58eed926172

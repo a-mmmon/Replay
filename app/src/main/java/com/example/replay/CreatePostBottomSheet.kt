@@ -154,68 +154,10 @@ class CreatePostBottomSheet : BottomSheetDialogFragment() {
             return
         }
 
-<<<<<<< HEAD
         val currentUser = auth.currentUser
         if (currentUser == null) {
             Toast.makeText(requireContext(), "Please log in to post", Toast.LENGTH_SHORT).show()
             return
-=======
-        // Get current user info
-        val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        val username = prefs.getString("username", "uri") ?: "uri"
-
-        // ✅ FIXED: Create post object with ALL required fields
-        val post = Post(
-            postId = "post_${System.currentTimeMillis()}",
-            userId = "current_user",
-            username = username,
-            userProfileImage = "",
-            caption = text,
-            imageUrl = "",
-            likes = 0,
-            comments = 0,
-            reposts = 0,                      // ✅ ADDED
-            timestamp = System.currentTimeMillis(),
-            music = selectedMusic,
-            isRepost = false,                 // ✅ ADDED
-            originalPostId = "",              // ✅ ADDED
-            repostedByUsername = ""           // ✅ ADDED
-        )
-
-        // Save post to SharedPreferences with music
-        savePost(post)
-
-        // Show success message
-        Toast.makeText(requireContext(), "Post created!", Toast.LENGTH_SHORT).show()
-
-        // Close bottom sheet
-        dismiss()
-    }
-
-    private fun savePost(post: Post) {
-        val prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        val editor = prefs.edit()
-
-        // Get current post count
-        val postCount = prefs.getInt("post_count", 0)
-
-        // Save new post
-        editor.putString("post_${postCount}_id", post.postId)
-        editor.putString("post_${postCount}_caption", post.caption)
-        editor.putLong("post_${postCount}_timestamp", post.timestamp)
-        editor.putInt("post_${postCount}_likes", post.likes)
-
-        // Save music if present
-        if (post.music != null) {
-            editor.putLong("post_${postCount}_music_trackId", post.music.trackId)
-            editor.putString("post_${postCount}_music_trackName", post.music.trackName)
-            editor.putString("post_${postCount}_music_artistName", post.music.artistName)
-            editor.putString("post_${postCount}_music_artworkUrl", post.music.artworkUrl100)
-            editor.putString("post_${postCount}_music_previewUrl", post.music.previewUrl)
-            editor.putString("post_${postCount}_music_collectionName", post.music.collectionName)
-            editor.putString("post_${postCount}_music_trackViewUrl", post.music.trackViewUrl)
-            editor.putString("post_${postCount}_music_releaseDate", post.music.releaseDate)
->>>>>>> 7866de0 (Updated post creation, feed adapter, and profile logic)
         }
 
         // Disable post button to prevent double posting
