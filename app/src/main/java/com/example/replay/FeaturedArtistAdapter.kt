@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import androidx.core.content.ContextCompat
 
 class FeaturedArtistAdapter(
     private val artists: MutableList<ITunesSong>,
@@ -28,6 +29,11 @@ class FeaturedArtistAdapter(
         val artist = artists[position]
 
         holder.artistName.text = artist.artistName
+        if (ThemeManager.getSavedTheme(holder.itemView.context) == ThemeManager.THEME_SUNSET) {
+            holder.artistName.setTextColor(
+                ContextCompat.getColor(holder.itemView.context, android.R.color.white)
+            )
+        }
 
         Glide.with(holder.itemView.context)
             .load(artist.artworkUrl100)

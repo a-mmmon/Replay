@@ -16,7 +16,9 @@
         <item name="android:textColorSecondary">@color/app_text_secondary</item>
     </style>
 
-    <style name="Theme.Replay" parent="Base.Theme.Replay" />
+    <style name="Theme.Replay" parent="Base.Theme.Replay">
+        <item name="android:windowBackground">@mipmap/ocean_bg</item>
+    </style>
 
     <style name="Theme.Replay.Default" parent="Base.Theme.Replay">
         <item name="colorPrimary">#2D3444</item>
@@ -43,21 +45,23 @@
         <item name="colorOnSurfaceVariant">#6F5548</item>
         <item name="android:statusBarColor">#D84A22</item>
         <item name="android:navigationBarColor">#FFF8F2</item>
-        <item name="android:windowBackground">@drawable/bg_app_gradient_sunset</item>
+        <item name="android:windowBackground">@mipmap/sunset_bg</item>
     </style>
 
     <style name="Theme.Replay.Royal" parent="Base.Theme.Replay">
-        <item name="colorPrimary">#7A63FF</item>
+        <item name="colorPrimary">#8D7BFF</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">#56B8FF</item>
+        <item name="colorSecondary">#5FA8FF</item>
         <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSurface">#EEE9FF</item>
-        <item name="colorOnSurface">#19142E</item>
-        <item name="colorSurfaceVariant">#DCD2FF</item>
-        <item name="colorOnSurfaceVariant">#5D5882</item>
-        <item name="android:statusBarColor">#6653DB</item>
-        <item name="android:navigationBarColor">#F7F7FF</item>
-        <item name="android:windowBackground">@drawable/bg_app_gradient_royal</item>
+        <item name="colorSurface">#0E1016</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#171B25</item>
+        <item name="colorOnSurfaceVariant">#D5DBEA</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/light_gray</item>
+        <item name="android:statusBarColor">#0A0D14</item>
+        <item name="android:navigationBarColor">#0A0D14</item>
+        <item name="android:windowBackground">@mipmap/purple_bg</item>
     </style>
 
     <!-- Circle Image View Style -->

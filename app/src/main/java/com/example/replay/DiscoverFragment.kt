@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -64,6 +65,7 @@ class DiscoverFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initializeViews(view)
+        applyThemeHeaderColors()
         setupRecyclerViews()
         setupFilterTabs()
         setupSearchView(view)
@@ -114,7 +116,7 @@ class DiscoverFragment : Fragment() {
         userSearchRecycler.adapter = userSearchAdapter
 
         featuredArtistsAdapter = FeaturedArtistAdapter(featuredArtists) { artistName ->
-            searchSongs(artistName, isArtistSearch = true)
+            searchArtists(artistName)
         }
 
         featuredArtistsRecycler.layoutManager =
@@ -207,7 +209,8 @@ class DiscoverFragment : Fragment() {
     private fun performSearch(query: String) {
         when (currentFilter) {
             "Profiles" -> searchUsers(query)
-            "Artists" -> searchSongs(query, isArtistSearch = true)
+            "Artists" -> searchArtists(query)
+            "Playlists" -> searchPlaylists(query)
             else -> searchSongs(query)
         }
     }
@@ -277,6 +280,75 @@ class DiscoverFragment : Fragment() {
                     Toast.makeText(requireContext(), "Network error: ${t.localizedMessage}", Toast.LENGTH_SHORT).show()
                 }
             })
+    }
+
+    private fun searchArtists(query: String) {
+        userSearchRecycler.visibility = View.GONE
+        searchRecyclerView.visibility = View.VISIBLE
+        searchResultsHeader.visibility = View.VISIBLE
+        searchResultsHeader.text = "Artists"
+
+        RetrofitClient.api.searchSongs(query, entity = "song")
+            .enqueue(object : Callback<ITunesResponse> {
+                override fun onResponse(call: Call<ITunesResponse>, response: Response<ITunesResponse>) {
+                    if (!isAdded) return
+                    if (response.isSuccessful) {
+                        val normalized = (response.body()?.results ?: emptyList())
+                            .distinctBy { it.artistName.trim().lowercase() }
+                            .map { song -> song.copy(trackName = song.artistName) }
+                        searchResults.clear()
+                        searchResults.addAll(normalized)
+                        searchAdapter.notifyDataSetChanged()
+                        searchResultsHeader.text = "Artists (${normalized.size})"
+                    }
+                }
+
+                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
+                    if (!isAdded) return
+                    Toast.makeText(requireContext(), "Network error: ${t.localizedMessage}", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    private fun searchPlaylists(query: String) {
+        userSearchRecycler.visibility = View.GONE
+        searchRecyclerView.visibility = View.VISIBLE
+        searchResultsHeader.visibility = View.VISIBLE
+        searchResultsHeader.text = "Playlists"
+
+        RetrofitClient.api.searchSongs(query, entity = "album")
+            .enqueue(object : Callback<ITunesResponse> {
+                override fun onResponse(call: Call<ITunesResponse>, response: Response<ITunesResponse>) {
+                    if (!isAdded) return
+                    if (response.isSuccessful) {
+                        val normalized = (response.body()?.results ?: emptyList())
+                            .map { song ->
+                                when {
+                                    song.trackName.isNotBlank() -> song
+                                    song.collectionName.isNotBlank() -> song.copy(trackName = song.collectionName)
+                                    else -> song
+                                }
+                            }
+                        searchResults.clear()
+                        searchResults.addAll(normalized)
+                        searchAdapter.notifyDataSetChanged()
+                        searchResultsHeader.text = "Playlists (${normalized.size})"
+                    }
+                }
+
+                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
+                    if (!isAdded) return
+                    Toast.makeText(requireContext(), "Network error: ${t.localizedMessage}", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    private fun applyThemeHeaderColors() {
+        if (ThemeManager.getSavedTheme(requireContext()) != ThemeManager.THEME_SUNSET) return
+        val white = ContextCompat.getColor(requireContext(), android.R.color.white)
+        featuredArtistsHeader.setTextColor(white)
+        trendingSongsHeader.setTextColor(white)
+        popularSongsHeader.setTextColor(white)
     }
 
     private fun showBrowseContent(show: Boolean) {
