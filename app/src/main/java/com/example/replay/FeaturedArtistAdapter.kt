@@ -29,7 +29,8 @@ class FeaturedArtistAdapter(
         val artist = artists[position]
 
         holder.artistName.text = artist.artistName
-        if (ThemeManager.getSavedTheme(holder.itemView.context) == ThemeManager.THEME_SUNSET) {
+        val theme = ThemeManager.getSavedTheme(holder.itemView.context)
+        if (theme == ThemeManager.THEME_SUNSET || theme == ThemeManager.THEME_ROYAL) {
             holder.artistName.setTextColor(
                 ContextCompat.getColor(holder.itemView.context, android.R.color.white)
             )
