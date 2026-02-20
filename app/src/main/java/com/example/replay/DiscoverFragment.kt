@@ -39,6 +39,9 @@ class DiscoverFragment : Fragment() {
     private lateinit var trendingSongsAdapter: TrendingSongAdapter
     private val trendingSongs = mutableListOf<ITunesSong>()
 
+    private val featuredArtists = mutableListOf<ITunesSong>()
+
+
     private lateinit var popularSongsRecycler: RecyclerView
     private lateinit var popularSongsAdapter: PopularSongAdapter
     private val popularSongs = mutableListOf<ITunesSong>()
@@ -110,9 +113,17 @@ class DiscoverFragment : Fragment() {
         userSearchRecycler.layoutManager = LinearLayoutManager(requireContext())
         userSearchRecycler.adapter = userSearchAdapter
 
-        val artistNames = listOf("Taylor Swift", "Ed Sheeran", "Ariana Grande", "The Weeknd", "Billie Eilish", "Drake")
-        featuredArtistsAdapter = FeaturedArtistAdapter(artistNames) { artistName -> searchSongs(artistName) }
-        featuredArtistsRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        featuredArtistsAdapter = FeaturedArtistAdapter(featuredArtists) { artistName ->
+            searchSongs(artistName, isArtistSearch = true)
+        }
+
+        featuredArtistsRecycler.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+
+        featuredArtistsRecycler.adapter = featuredArtistsAdapter
+
+        featuredArtistsRecycler.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         featuredArtistsRecycler.adapter = featuredArtistsAdapter
 
         trendingSongsAdapter = TrendingSongAdapter(trendingSongs) { song -> showMusicBottomSheet(song) }
@@ -123,6 +134,47 @@ class DiscoverFragment : Fragment() {
         popularSongsRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         popularSongsRecycler.adapter = popularSongsAdapter
     }
+
+    private fun loadFeaturedArtists() {
+
+        val artistQueries = listOf(
+            "Taylor Swift",
+            "Ed Sheeran",
+            "Ariana Grande",
+            "The Weeknd",
+            "Billie Eilish",
+            "Drake"
+        )
+
+        featuredArtists.clear()
+
+        for (name in artistQueries) {
+            RetrofitClient.api.searchSongs(name, limit = 1)
+                .enqueue(object : Callback<ITunesResponse> {
+
+                    override fun onResponse(
+                        call: Call<ITunesResponse>,
+                        response: Response<ITunesResponse>
+                    ) {
+                        if (!isAdded) return
+
+                        if (response.isSuccessful) {
+                            val result = response.body()?.results?.firstOrNull()
+                            if (result != null) {
+                                featuredArtists.add(result)
+                                featuredArtistsAdapter.notifyDataSetChanged()
+                            }
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
+                        Log.e("DiscoverFragment", "Failed to load artist", t)
+                    }
+                })
+        }
+    }
+
+
 
     private fun setupSearchView(view: View) {
         val searchView = view.findViewById<SearchView>(R.id.searchView)
@@ -228,6 +280,7 @@ class DiscoverFragment : Fragment() {
     private fun loadInitialContent() {
         loadTrendingSongsFromFirebase()
         loadPopularSongsFromFirebase()
+        loadFeaturedArtists()
     }
 
     private fun loadTrendingSongsFromFirebase() {

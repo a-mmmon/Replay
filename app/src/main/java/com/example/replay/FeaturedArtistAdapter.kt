@@ -3,35 +3,39 @@ package com.example.replay
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.imageview.ShapeableImageView
+import com.bumptech.glide.Glide
 
 class FeaturedArtistAdapter(
-    private val artists: List<String>,
-    private val onArtistClick: (String) -> Unit
+    private val artists: MutableList<ITunesSong>,
+    private val onClick: (String) -> Unit
 ) : RecyclerView.Adapter<FeaturedArtistAdapter.ArtistViewHolder>() {
 
     inner class ArtistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val artistImage: ShapeableImageView = itemView.findViewById(R.id.artist_image)  // ✅ FIXED: artistImage → artist_image
-        val artistName: TextView = itemView.findViewById(R.id.artist_name)  // ✅ FIXED: artistName → artist_name
+        val artistImage: ImageView = itemView.findViewById(R.id.artistImage)
+        val artistName: TextView = itemView.findViewById(R.id.artistName)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArtistViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_artist, parent, false)
+            .inflate(R.layout.item_featured_artist, parent, false)
         return ArtistViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ArtistViewHolder, position: Int) {
         val artist = artists[position]
-        holder.artistName.text = artist
 
-        // Set placeholder image (you can customize per artist if needed)
-        holder.artistImage.setImageResource(R.drawable.ic_android_placeholder)
+        holder.artistName.text = artist.artistName
+
+        Glide.with(holder.itemView.context)
+            .load(artist.artworkUrl100)
+            .circleCrop()
+            .into(holder.artistImage)
 
         holder.itemView.setOnClickListener {
-            onArtistClick(artist)
+            onClick(artist.artistName)
         }
     }
 
