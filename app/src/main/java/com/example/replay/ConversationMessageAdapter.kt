@@ -3,12 +3,14 @@ package com.example.replay
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class ConversationMessagesAdapter(
     private var messages: List<Message>,
-    private val currentUserId: String
+    private val currentUserId: String,
+    private val onMessageLongPress: ((Message) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -19,6 +21,7 @@ class ConversationMessagesAdapter(
     inner class SentMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val messageText: TextView = itemView.findViewById(R.id.messageText)
         val timestamp: TextView = itemView.findViewById(R.id.timestamp)
+        val menuButton: ImageView = itemView.findViewById(R.id.messageMenuButton)
     }
 
     inner class ReceivedMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -54,11 +57,19 @@ class ConversationMessagesAdapter(
             is SentMessageViewHolder -> {
                 holder.messageText.text = message.text
                 holder.timestamp.text = formatTimestamp(message.timestamp)
+                holder.menuButton.setOnClickListener {
+                    onMessageLongPress?.invoke(message)
+                }
             }
             is ReceivedMessageViewHolder -> {
                 holder.messageText.text = message.text
                 holder.timestamp.text = formatTimestamp(message.timestamp)
             }
+        }
+
+        holder.itemView.setOnLongClickListener {
+            onMessageLongPress?.invoke(message)
+            true
         }
     }
 
@@ -74,6 +85,15 @@ class ConversationMessagesAdapter(
         mutableMessages.add(message)
         messages = mutableMessages
         notifyItemInserted(messages.size - 1)
+    }
+
+    fun removeMessage(messageId: String) {
+        val mutableMessages = messages.toMutableList()
+        val index = mutableMessages.indexOfFirst { it.messageId == messageId }
+        if (index == -1) return
+        mutableMessages.removeAt(index)
+        messages = mutableMessages
+        notifyItemRemoved(index)
     }
 
     private fun formatTimestamp(timestamp: Long): String {

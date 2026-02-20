@@ -5,9 +5,9 @@ import android.util.Log
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FirebaseAuth
@@ -16,7 +16,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
-class OtherUserProfileActivity : AppCompatActivity() {
+class OtherUserProfileActivity : BaseThemedActivity() {
 
     private lateinit var profileImage: ShapeableImageView
     private lateinit var usernameText: TextView
@@ -68,6 +68,7 @@ class OtherUserProfileActivity : AppCompatActivity() {
         tabLayout = findViewById(R.id.tabLayout)
         backButton = findViewById(R.id.backButton)
         messageButton = findViewById(R.id.messageButton)
+        profileImage.setImageResource(ThemeManager.getDefaultAvatarRes(this))
     }
 
     private fun setupRecyclerView() {
@@ -129,12 +130,21 @@ class OtherUserProfileActivity : AppCompatActivity() {
                         followingCount.text = profile.following.toString()
                         bioText.text = profile.bio.ifEmpty { "No bio yet" }
 
-                        // TODO: Load profile image with Glide
-                        // if (profile.profileImage.isNotEmpty()) {
-                        //     Glide.with(this@OtherUserProfileActivity)
-                        //         .load(profile.profileImage)
-                        //         .into(profileImage)
-                        // }
+                        if (profile.profileImage.isNotBlank()) {
+                            Glide.with(this@OtherUserProfileActivity)
+                                .load(profile.profileImage)
+                                .placeholder(
+                                    ThemeManager.getDefaultAvatarRes(this@OtherUserProfileActivity)
+                                )
+                                .error(
+                                    ThemeManager.getDefaultAvatarRes(this@OtherUserProfileActivity)
+                                )
+                                .into(profileImage)
+                        } else {
+                            profileImage.setImageResource(
+                                ThemeManager.getDefaultAvatarRes(this@OtherUserProfileActivity)
+                            )
+                        }
 
                         Log.d("OtherUserProfile", "Loaded profile: ${profile.username}")
                     } else {

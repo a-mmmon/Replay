@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
+    app:cardBackgroundColor="?attr/colorSurface"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp">
 
@@ -64,9 +65,25 @@
             android:layout_marginStart="8dp"
             android:textSize="12sp"
             android:textColor="?android:attr/textColorSecondary"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/postMenuButton"
             app:layout_constraintTop_toTopOf="@id/profileImage"
             tools:text="2h ago" />
+
+        <ImageView
+            android:id="@+id/postMenuButton"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="Post options"
+            android:focusable="true"
+            android:padding="2dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:tint="?android:attr/textColorSecondary"
+            app:layout_constraintBottom_toBottomOf="@id/timestamp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/timestamp" />
 
         <!-- Post Content -->
         <TextView
@@ -89,7 +106,7 @@
             android:layout_marginTop="12dp"
             android:visibility="gone"
             app:cardCornerRadius="8dp"
-            app:cardBackgroundColor="#F5F5F5"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/postText"

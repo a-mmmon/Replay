@@ -35,10 +35,10 @@ class UsersToMessageAdapter(
         if (user.profileImage.isNotEmpty()) {
             Glide.with(holder.itemView.context)
                 .load(user.profileImage)
-                .placeholder(R.drawable.ic_android_placeholder)
+                .placeholder(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
                 .into(holder.profileImage)
         } else {
-            holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
+            holder.profileImage.setImageResource(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
         }
 
         holder.itemView.setOnClickListener {

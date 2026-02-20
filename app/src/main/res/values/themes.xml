@@ -1,12 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.Replay" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/brand_secondary</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">#D5EEFF</item>
+        <item name="colorOnSurface">@color/app_text_primary</item>
+        <item name="colorSurfaceVariant">#B9DFFF</item>
+        <item name="colorOnSurfaceVariant">@color/app_text_secondary</item>
+        <item name="android:statusBarColor">@color/brand_primary_dark</item>
+        <item name="android:navigationBarColor">@color/app_surface</item>
+        <item name="android:windowBackground">@drawable/bg_app_gradient</item>
+        <item name="android:textColorPrimary">@color/app_text_primary</item>
+        <item name="android:textColorSecondary">@color/app_text_secondary</item>
     </style>
 
     <style name="Theme.Replay" parent="Base.Theme.Replay" />
+
+    <style name="Theme.Replay.Default" parent="Base.Theme.Replay">
+        <item name="colorPrimary">#2D3444</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">#596276</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#171B24</item>
+        <item name="colorSurfaceVariant">#F2F4F8</item>
+        <item name="colorOnSurfaceVariant">#566072</item>
+        <item name="android:statusBarColor">#2D3444</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowBackground">@mipmap/cloud_bg</item>
+    </style>
+
+    <style name="Theme.Replay.Sunset" parent="Base.Theme.Replay">
+        <item name="colorPrimary">#FF5D2E</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">#FF2F9A</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">#FFE0CF</item>
+        <item name="colorOnSurface">#211713</item>
+        <item name="colorSurfaceVariant">#FFC1A2</item>
+        <item name="colorOnSurfaceVariant">#6F5548</item>
+        <item name="android:statusBarColor">#D84A22</item>
+        <item name="android:navigationBarColor">#FFF8F2</item>
+        <item name="android:windowBackground">@drawable/bg_app_gradient_sunset</item>
+    </style>
+
+    <style name="Theme.Replay.Royal" parent="Base.Theme.Replay">
+        <item name="colorPrimary">#7A63FF</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">#56B8FF</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">#EEE9FF</item>
+        <item name="colorOnSurface">#19142E</item>
+        <item name="colorSurfaceVariant">#DCD2FF</item>
+        <item name="colorOnSurfaceVariant">#5D5882</item>
+        <item name="android:statusBarColor">#6653DB</item>
+        <item name="android:navigationBarColor">#F7F7FF</item>
+        <item name="android:windowBackground">@drawable/bg_app_gradient_royal</item>
+    </style>
 
     <!-- Circle Image View Style -->
     <style name="CircleImageView">

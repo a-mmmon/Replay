@@ -4,6 +4,18 @@
     <color name="white">#FFFFFFFF</color>
     <color name="purple">#6750A4</color>
     <color name="light_gray">#F5F5F5</color>
-    <color name="message_sent">#6750A4</color>
-    <color name="message_received">#F0F0F0</color>
+
+    <color name="brand_primary">#00A99D</color>
+    <color name="brand_primary_dark">#007C74</color>
+    <color name="brand_secondary">#FF7A1A</color>
+    <color name="app_bg_top">#73C6FF</color>
+    <color name="app_bg_bottom">#63EBC5</color>
+    <color name="app_surface">#FFFFFF</color>
+    <color name="app_text_primary">#141A22</color>
+    <color name="app_text_secondary">#5B6574</color>
+
+    <color name="message_sent">#0F766E</color>
+    <color name="message_received">#EAF1FF</color>
+    <color name="bottom_nav_selected">#0F766E</color>
+    <color name="bottom_nav_unselected">#7E8794</color>
 </resources>

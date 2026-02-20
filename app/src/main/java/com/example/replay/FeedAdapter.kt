@@ -1,17 +1,23 @@
 package com.example.replay
 
 import android.content.Intent
+import android.content.Context
+import android.content.ContextWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.fragment.app.FragmentActivity
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class FeedAdapter(
     private val posts: MutableList<Post>,
@@ -24,11 +30,14 @@ class FeedAdapter(
     private val repostedPosts = mutableSetOf<String>()
     private val repostCounts = mutableMapOf<String, Int>()
     private val commentCounts = mutableMapOf<String, Int>()
+    private val auth = FirebaseAuth.getInstance()
+    private val database = FirebaseDatabase.getInstance()
 
     inner class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: ShapeableImageView = itemView.findViewById(R.id.profileImage)
         val userName: TextView = itemView.findViewById(R.id.userName)
         val timestamp: TextView = itemView.findViewById(R.id.timestamp)
+        val postMenuButton: ImageView = itemView.findViewById(R.id.postMenuButton)
         val postText: TextView = itemView.findViewById(R.id.postText)
         val musicContainer: CardView = itemView.findViewById(R.id.musicContainer)
         val musicImage: ImageView = itemView.findViewById(R.id.musicImage)
@@ -54,6 +63,7 @@ class FeedAdapter(
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
+        val music = resolveSong(post)
 
         if (!likeCounts.containsKey(post.postId)) {
             likeCounts[post.postId] = post.likes
@@ -90,24 +100,28 @@ class FeedAdapter(
         if (post.userProfileImage.isNotEmpty()) {
             Glide.with(holder.itemView.context)
                 .load(post.userProfileImage)
-                .placeholder(R.drawable.ic_android_placeholder)
+                .placeholder(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
                 .into(holder.profileImage)
         } else {
-            holder.profileImage.setImageResource(R.drawable.ic_android_placeholder)
+            holder.profileImage.setImageResource(ThemeManager.getDefaultAvatarRes(holder.itemView.context))
         }
 
-        if (post.music != null) {
+        if (music != null) {
             holder.musicContainer.visibility = View.VISIBLE
-            holder.musicTitle.text = post.music.trackName
-            holder.musicArtist.text = post.music.artistName
+            holder.musicTitle.text = music.trackName
+            holder.musicArtist.text = music.artistName
 
-            if (post.music.artworkUrl100.isNotEmpty()) {
+            if (music.artworkUrl100.isNotEmpty()) {
                 Glide.with(holder.itemView.context)
-                    .load(post.music.artworkUrl100)
+                    .load(music.artworkUrl100)
                     .into(holder.musicImage)
+            }
+            holder.musicContainer.setOnClickListener {
+                showMusicBottomSheet(holder.itemView.context, music)
             }
         } else {
             holder.musicContainer.visibility = View.GONE
+            holder.musicContainer.setOnClickListener(null)
         }
 
         // ✅ Firebase: Check like state
@@ -162,6 +176,17 @@ class FeedAdapter(
 
         holder.itemView.setOnClickListener {
             onPostClick?.invoke(post)
+        }
+
+        val isOwnPost = post.userId == auth.currentUser?.uid
+        holder.postMenuButton.visibility = if (isOwnPost) View.VISIBLE else View.GONE
+        holder.postMenuButton.setOnClickListener {
+            maybeShowOwnPostOptions(holder.bindingAdapterPosition, holder.itemView.context)
+        }
+
+        holder.itemView.setOnLongClickListener {
+            maybeShowOwnPostOptions(holder.bindingAdapterPosition, holder.itemView.context)
+            true
         }
     }
 
@@ -293,4 +318,109 @@ class FeedAdapter(
             else -> "${diff / 604800000}w ago"
         }
     }
+
+    private fun showMusicBottomSheet(context: android.content.Context, song: ITunesSong?) {
+        val activity = findFragmentActivity(context) ?: return
+        val validSong = song ?: return
+
+        val bottomSheet = MusicPlayerBottomSheet(validSong) { action ->
+            // Bottom sheet handles actions internally; no-op callback for adapter usage.
+        }
+        bottomSheet.show(activity.supportFragmentManager, "MusicPlayerBottomSheet")
+    }
+
+    private fun findFragmentActivity(context: Context): FragmentActivity? {
+        var current = context
+        while (current is ContextWrapper) {
+            if (current is FragmentActivity) return current
+            current = current.baseContext
+        }
+        return null
+    }
+
+    private fun resolveSong(post: Post): ITunesSong? {
+        post.music?.let { return it }
+        if (post.songTitle.isNullOrBlank()) return null
+
+        return ITunesSong(
+            trackId = if (post.postId.isNotBlank()) post.postId.hashCode().toLong() else 0L,
+            trackName = post.songTitle ?: "",
+            artistName = post.songArtist ?: "",
+            artworkUrl100 = post.songImageUrl ?: ""
+        )
+    }
+
+    private fun maybeShowOwnPostOptions(position: Int, context: Context) {
+        if (position == RecyclerView.NO_POSITION || position >= posts.size) return
+        val post = posts[position]
+        val currentUserId = auth.currentUser?.uid ?: return
+        if (post.userId != currentUserId) return
+
+        val activity = findFragmentActivity(context) ?: return
+        android.app.AlertDialog.Builder(activity)
+            .setTitle("Post options")
+            .setItems(arrayOf("Edit post", "Delete post")) { _, which ->
+                when (which) {
+                    0 -> showEditPostDialog(activity, post, position)
+                    1 -> confirmDeletePost(activity, post, position)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showEditPostDialog(activity: FragmentActivity, post: Post, position: Int) {
+        val input = EditText(activity).apply {
+            setText(post.caption)
+            setSelection(text.length)
+        }
+
+        android.app.AlertDialog.Builder(activity)
+            .setTitle("Edit post")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val newCaption = input.text.toString().trim()
+                if (newCaption.isBlank()) {
+                    Toast.makeText(activity, "Caption cannot be empty.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                database.getReference("posts").child(post.postId).child("caption")
+                    .setValue(newCaption)
+                    .addOnSuccessListener {
+                        posts[position] = post.copy(caption = newCaption)
+                        notifyItemChanged(position)
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(activity, "Failed to update post.", Toast.LENGTH_SHORT).show()
+                    }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun confirmDeletePost(activity: FragmentActivity, post: Post, position: Int) {
+        android.app.AlertDialog.Builder(activity)
+            .setTitle("Delete post")
+            .setMessage("This cannot be undone.")
+            .setPositiveButton("Delete") { _, _ ->
+                deletePost(activity, post, position)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deletePost(activity: FragmentActivity, post: Post, position: Int) {
+        if (post.postId.isBlank()) return
+        val postRef = database.getReference("posts").child(post.postId)
+        postRef.removeValue()
+            .addOnSuccessListener {
+                posts.removeAt(position)
+                notifyItemRemoved(position)
+                database.getReference("likes").child(post.postId).removeValue()
+            }
+            .addOnFailureListener {
+                Toast.makeText(activity, "Failed to delete post.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
 }
