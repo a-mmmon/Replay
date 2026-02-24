@@ -7,10 +7,12 @@
     android:background="?attr/selectableItemBackground"
     android:gravity="center_vertical">
 
-    <!-- Music Album Cover Placeholder -->
-    <View
+    <ImageView
+        android:id="@+id/ivMusicCover"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="Song cover"
         android:background="#CCCCCC"
         android:layout_marginEnd="16dp"/>
 

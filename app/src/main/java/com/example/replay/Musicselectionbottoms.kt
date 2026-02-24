@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.bumptech.glide.Glide
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -81,7 +82,6 @@ class MusicSelectionBottomSheet : BottomSheetDialogFragment() {
     // ─── Load a rich list of songs from iTunes API ────────────────────────────
     private fun loadAllSongsFromItunes() {
         allSongs.clear()
-        allSongs.addAll(SampleData.sampleSongs) // Show sample immediately as placeholder
 
         val queries = listOf(
             "top hits 2024",
@@ -106,31 +106,61 @@ class MusicSelectionBottomSheet : BottomSheetDialogFragment() {
 
                         if (response.isSuccessful) {
                             val results = response.body()?.results ?: emptyList()
-                            // Add unique songs only (avoid duplicates by trackId)
+                            // Add unique songs with real artwork only.
                             val existingIds = allSongs.map { it.trackId }.toSet()
-                            val newSongs = results.filter { it.trackId !in existingIds }
+                            val newSongs = results.filter { song ->
+                                song.trackId !in existingIds &&
+                                    song.artworkUrl100.isNotBlank() &&
+                                    !song.artworkUrl100.contains("example.com", ignoreCase = true)
+                            }
                             allSongs.addAll(newSongs)
                         }
 
                         // When all requests done, mark as loaded
                         if (completedRequests == totalRequests) {
-                            allSongsLoaded = true
-                            // If user is already on All Songs tab, refresh
-                            if (tabLayout.selectedTabPosition == 2) {
-                                showAllSongs()
-                            }
+                            loadFallbackAllSongsIfNeeded()
                         }
                     }
 
                     override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
                         completedRequests++
                         if (completedRequests == totalRequests && isAdded) {
-                            allSongsLoaded = true
-                            if (tabLayout.selectedTabPosition == 2) showAllSongs()
+                            loadFallbackAllSongsIfNeeded()
                         }
                     }
                 })
         }
+    }
+
+    private fun loadFallbackAllSongsIfNeeded() {
+        if (allSongs.isNotEmpty()) {
+            allSongsLoaded = true
+            if (tabLayout.selectedTabPosition == 2) showAllSongs()
+            return
+        }
+
+        RetrofitClient.api.searchSongs("popular songs", limit = 40)
+            .enqueue(object : Callback<ITunesResponse> {
+                override fun onResponse(call: Call<ITunesResponse>, response: Response<ITunesResponse>) {
+                    if (!isAdded) return
+                    if (response.isSuccessful) {
+                        val fallback = response.body()?.results.orEmpty().filter {
+                            it.artworkUrl100.isNotBlank() &&
+                                !it.artworkUrl100.contains("example.com", ignoreCase = true)
+                        }
+                        allSongs.clear()
+                        allSongs.addAll(fallback.distinctBy { it.trackId })
+                    }
+                    allSongsLoaded = true
+                    if (tabLayout.selectedTabPosition == 2) showAllSongs()
+                }
+
+                override fun onFailure(call: Call<ITunesResponse>, t: Throwable) {
+                    if (!isAdded) return
+                    allSongsLoaded = true
+                    if (tabLayout.selectedTabPosition == 2) showAllSongs()
+                }
+            })
     }
 
     private fun loadFavoriteSongs() {
@@ -240,13 +270,8 @@ class MusicSelectionBottomSheet : BottomSheetDialogFragment() {
 
     private fun showAllSongs() {
         displayedSongs.clear()
-        if (!allSongsLoaded) {
-            // Show sample while loading, and display loading message
-            displayedSongs.addAll(SampleData.sampleSongs)
-            tvEmptyMessage.text = "Loading more songs..."
-        } else {
-            displayedSongs.addAll(allSongs)
-        }
+        displayedSongs.addAll(allSongs)
+        if (!allSongsLoaded) tvEmptyMessage.text = "Loading songs..."
         adapter.notifyDataSetChanged()
         updateEmptyState()
     }
@@ -362,6 +387,7 @@ class MusicSelectionAdapter(
 ) : RecyclerView.Adapter<MusicSelectionAdapter.MusicViewHolder>() {
 
     inner class MusicViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val ivCover: ImageView = view.findViewById(R.id.ivMusicCover)
         val tvTitle: TextView = view.findViewById(R.id.tvMusicTitle)
         val tvArtist: TextView = view.findViewById(R.id.tvMusicArtist)
     }
@@ -376,6 +402,15 @@ class MusicSelectionAdapter(
         val music = musicList[position]
         holder.tvTitle.text = music.trackName
         holder.tvArtist.text = music.artistName
+        if (music.artworkUrl100.isNotBlank()) {
+            Glide.with(holder.itemView.context)
+                .load(music.artworkUrl100)
+                .placeholder(R.drawable.ic_music_note)
+                .error(R.drawable.ic_music_note)
+                .into(holder.ivCover)
+        } else {
+            holder.ivCover.setImageResource(R.drawable.ic_music_note)
+        }
         holder.itemView.setOnClickListener { onMusicClick(music) }
     }
 
