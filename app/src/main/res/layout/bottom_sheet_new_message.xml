@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="@color/app_surface">
+    android:background="?attr/colorSurface">
 
     <TextView
         android:layout_width="wrap_content"
@@ -12,7 +12,7 @@
         android:text="New Message"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@color/app_text_primary"
+        android:textColor="?attr/colorOnSurface"
         android:layout_gravity="center"
         android:layout_marginBottom="16dp" />
 
@@ -22,7 +22,9 @@
         android:layout_height="wrap_content"
         android:hint="Search users..."
         android:padding="12dp"
-        android:background="@drawable/rounded_edittext"
+        android:background="@drawable/bg_input_theme"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
         android:inputType="text"
         android:layout_marginBottom="16dp" />
 

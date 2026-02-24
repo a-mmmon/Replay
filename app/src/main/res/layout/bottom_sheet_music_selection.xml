@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/colorSurface"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -11,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Select Music"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"/>
@@ -19,6 +21,7 @@
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:cardBackgroundColor="?attr/colorSurfaceVariant"
         app:cardCornerRadius="24dp"
         app:cardElevation="2dp"
         android:layout_marginBottom="16dp">
@@ -34,6 +37,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_search"
+                android:tint="?attr/colorOnSurfaceVariant"
                 android:layout_marginEnd="8dp"/>
 
             <EditText
@@ -43,6 +47,8 @@
                 android:layout_weight="1"
                 android:hint="Search songs..."
                 android:background="@null"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
                 android:textSize="16sp"
                 android:inputType="text"
                 android:imeOptions="actionSearch"/>
@@ -52,6 +58,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:tint="?attr/colorOnSurfaceVariant"
                 android:visibility="gone"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -61,6 +68,9 @@
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceVariant"
+        app:tabTextColor="?attr/colorOnSurfaceVariant"
+        app:tabSelectedTextColor="?attr/colorPrimary"
         app:tabMode="fixed"
         app:tabGravity="fill"
         android:layout_marginBottom="16dp">
@@ -107,6 +117,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="No songs found"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="16sp"
             android:layout_marginTop="16dp"/>
     </LinearLayout>

@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/colorSurface"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -10,6 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Create Post"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_gravity="center"
@@ -21,8 +23,10 @@
         android:layout_height="120dp"
         android:gravity="top|start"
         android:hint="What's on your mind?"
-        android:background="@android:color/transparent"
+        android:background="@drawable/bg_input_theme"
         android:padding="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
         android:inputType="textMultiLine|textCapSentences" />
 
     <Button
@@ -40,6 +44,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:visibility="gone"
+        app:cardBackgroundColor="?attr/colorSurfaceVariant"
         app:cardCornerRadius="8dp"
         app:cardElevation="2dp">
 
@@ -65,6 +70,7 @@
                 android:layout_marginEnd="8dp"
                 android:textSize="14sp"
                 android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
                 android:maxLines="1"
                 android:ellipsize="end"
                 app:layout_constraintStart_toEndOf="@id/musicImage"

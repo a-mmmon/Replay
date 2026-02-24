@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/colorSurface"
     android:orientation="vertical"
     android:padding="24dp">
 
@@ -77,6 +78,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Open in Spotify"
+        android:textColor="?attr/colorOnSurface"
         android:drawableStart="@drawable/ic_music_note"
         android:drawablePadding="8dp"
         android:paddingVertical="12dp"
@@ -89,6 +91,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Open in Apple Music"
+        android:textColor="?attr/colorOnSurface"
         android:drawableStart="@drawable/ic_music_note"
         android:drawablePadding="8dp"
         android:paddingVertical="12dp"
@@ -101,6 +104,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Open in YouTube Music"
+        android:textColor="?attr/colorOnSurface"
         android:drawableStart="@drawable/ic_music_note"
         android:drawablePadding="8dp"
         android:paddingVertical="12dp"
